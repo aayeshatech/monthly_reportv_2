@@ -1,2 +1,12 @@
-streamlit==1.32.0
-pandas==2.0.3
+streamlit>=1.28.0
+pandas>=1.5.0
+plotly>=5.15.0
+datetime
+dataclasses
+enum
+io
+base64
+math
+typing
+csv
+json

@@ -479,301 +479,82 @@ class EnhancedAstrologicalTradingPlatform:
             )
         )
         
-                    st.plotly_chart(chart_fig, use_container_width=True)
-                
-                with col2:
-                    # Birth chart details
-                    birth_chart = st.session_state.birth_chart
-                    st.markdown("#### 📊 Planetary Positions")
-                    
-                    for planet, degree in birth_chart.planetary_positions.items():
-                        nakshatra, lord = platform.get_nakshatra_info(degree)
-                        house = int(degree / 30) + 1
-                        
-                        st.markdown(f"**{planet}**: {degree:.1f}° in House {house}")
-                        st.markdown(f"*Nakshatra: {nakshatra} (Lord: {lord})*")
-                        st.markdown("---")
-            
-            # Display Current Transits (rest of the existing code)
-            if 'current_transits' in st.session_state:
-                st.markdown("---")
-                st.markdown("### 📡 Live Planetary Transits & Market Impact")
-                st.markdown(f"**Analysis Date:** {transit_date} at {analysis_time}")
-                
-                # [Rest of existing transit display code remains the same]
-                transit_data = []
-                for transit in st.session_state.current_transits:
-                    transit_data.append({
-                        'Time': transit.time,
-                        'Planet': transit.planet,
-                        'Degree': f"{transit.degree:.2f}°",
-                        'Nakshatra': transit.nakshatra,
-                        'Nakshatra Lord': transit.nakshatra_lord,
-                        'Sub Lord': transit.sub_lord,
-                        'House': f"House {transit.house}",
-                        'Aspect': transit.aspect_type,
-                        'Strength': transit.strength,
-                        'NIFTY': transit.market_impact.get('NIFTY', 'Neutral'),
-                        'BANKNIFTY': transit.market_impact.get('BANKNIFTY', 'Neutral'),
-                        'GOLD': transit.market_impact.get('GOLD', 'Neutral'),
-                        'SILVER': transit.market_impact.get('SILVER', 'Neutral'),
-                        'CRUDE': transit.market_impact.get('CRUDE', 'Neutral'),
-                        'DOW JONES': transit.market_impact.get('DOW JONES', 'Neutral'),
-                        'BTC': transit.market_impact.get('BTC', 'Neutral')
-                    })
-                
-                df_transits = pd.DataFrame(transit_data)
-                st.dataframe(df_transits, use_container_width=True, height=400)
-            
-            # Instructions
-            if 'birth_chart' not in st.session_state or 'current_transits' not in st.session_state:
-                st.markdown("---")
-                st.info("""
-                ### 📚 How to Use Birth Chart Analysis:
-                
-                1. **Generate Birth Chart**: Enter your birth date, time, and location
-                2. **Choose Chart Style**: Select South Indian (Diamond) or North Indian (Square) format
-                3. **Fetch Transit Data**: Select analysis date and fetch current planetary positions
-                4. **Analyze Market Impact**: Review how current transits affect different markets
-                
-                **New Features:**
-                - ✅ South Indian birth chart format (Traditional diamond shape)
-                - ✅ North Indian birth chart format (Circular with houses)
-                - ✅ Real-time planetary transits with accurate degrees
-                - ✅ Natural language query processing
-                """)
+        return fig
+
+    def create_birth_chart_visualization(self, birth_chart: BirthChart) -> go.Figure:
+        """Create traditional North Indian style birth chart visualization"""
+        fig = go.Figure()
         
-        # [Rest of the existing tabs remain the same - tab2, tab3, tab4, tab5]
-        with tab2:
-            forecasts = st.session_state.report
-            month_name = platform.month_names[st.session_state.month]
-            
-            # Professional Monthly Overview
-            st.markdown(f"# 📅 {month_name} {st.session_state.year} Analysis - {st.session_state.symbol}")
-            
-            # Calculate stats
-            bullish_count = sum(1 for f in forecasts if f.sentiment == Sentiment.BULLISH)
-            bearish_count = sum(1 for f in forecasts if f.sentiment == Sentiment.BEARISH)
-            neutral_count = len(forecasts) - bullish_count - bearish_count
-            strong_transits = len([f for f in forecasts if 'Strong' in f.impact])
-            
-            # Professional sentiment display
-            if bullish_count > bearish_count:
-                st.success("📈 **BULLISH MONTH OUTLOOK** - Favorable trading conditions expected")
-            elif bearish_count > bullish_count:
-                st.error("📉 **BEARISH MONTH OUTLOOK** - Cautious approach recommended")
-            else:
-                st.warning("➡️ **MIXED SIGNALS** - Selective trading opportunities")
-            
-            # Compact stats display
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.metric("🟢 Bullish Days", bullish_count)
-            with col2:
-                st.metric("🔴 Bearish Days", bearish_count)
-            with col3:
-                st.metric("🟡 Neutral Days", neutral_count)
-            with col4:
-                st.metric("⭐ Strong Transits", strong_transits)
-            
-            st.markdown("---")
-            
-            # Render Astro Calendar Grid
-            render_astro_calendar_grid(forecasts, month_name, st.session_state.year, platform)
+        # Draw outer circle (zodiac)
+        theta = np.linspace(0, 2*np.pi, 100)
+        x_outer = np.cos(theta)
+        y_outer = np.sin(theta)
         
-        # [Continue with remaining tabs - keeping existing functionality]
-        with tab3:
-            st.markdown(f"# 📊 {st.session_state.symbol} Analysis")
-            st.markdown(f"## {platform.month_names[st.session_state.month]} {st.session_state.year} Astrological Analysis")
-            
-            forecasts = st.session_state.report
-            
-            # Professional Summary Stats
-            col1, col2, col3, col4 = st.columns(4)
-            
-            total_bullish_impact = sum(float(f.change.replace('+', '').replace('-', '')) for f in forecasts if f.sentiment == Sentiment.BULLISH)
-            total_bearish_impact = sum(float(f.change.replace('+', '').replace('-', '')) for f in forecasts if f.sentiment == Sentiment.BEARISH)
-            avg_daily_change = np.mean([float(f.change.replace('+', '').replace('-', '')) for f in forecasts])
-            high_accuracy_transits = len([f for f in forecasts if f.detailed_transit.historical_accuracy > 75])
-            
-            with col1:
-                st.metric("🟢 Total Bullish Impact", f"+{total_bullish_impact:.1f}%")
-            with col2:
-                st.metric("🔴 Total Bearish Impact", f"-{total_bearish_impact:.1f}%")
-            with col3:
-                st.metric("📈 Avg Daily Impact", f"{avg_daily_change:.1f}%")
-            with col4:
-                st.metric("⭐ High Accuracy Transits", high_accuracy_transits)
-            
-            # Create comprehensive table data
-            table_data = []
-            for forecast in forecasts[:21]:  # Show first 21 days
-                table_data.append({
-                    'Date': forecast.date,
-                    'Day': forecast.day,
-                    'Planet': forecast.detailed_transit.planet,
-                    'Transit': forecast.detailed_transit.transit_type.title(),
-                    'Zodiac': platform.zodiac_signs[forecast.detailed_transit.zodiac_sign].name if forecast.detailed_transit.zodiac_sign in platform.zodiac_signs else forecast.detailed_transit.zodiac_sign.title(),
-                    'Change %': forecast.change,
-                    'Sentiment': forecast.sentiment.value.upper(),
-                    'Signal': forecast.signal.value,
-                    'Impact': forecast.detailed_transit.impact_strength,
-                    'Accuracy %': f"{forecast.detailed_transit.historical_accuracy:.0f}%"
-                })
-            
-            df_table = pd.DataFrame(table_data)
-            st.dataframe(df_table, use_container_width=True, height=400)
+        fig.add_trace(go.Scatter(
+            x=x_outer, y=y_outer, mode='lines',
+            line=dict(color='black', width=2),
+            name='Zodiac Circle',
+            showlegend=False
+        ))
         
-        with tab4:
-            st.markdown(f"## 📈 {st.session_state.symbol} Astrological Movement Graph")
-            st.markdown("### Dynamic Planetary Transit Impact Visualization")
+        # Draw house divisions
+        for i in range(12):
+            angle = i * 30 * np.pi / 180
+            x_line = [0.7 * np.cos(angle), np.cos(angle)]
+            y_line = [0.7 * np.sin(angle), np.sin(angle)]
             
-            # Create enhanced forecast dataframe
-            try:
-                df_forecasts = pd.DataFrame([
-                    {
-                        'date': f.date,
-                        'change': float(f.change.replace('+', '').replace('-', '')),
-                        'sentiment': f.sentiment.value,
-                        'signal': f.signal.value,
-                        'event': f.event,
-                        'impact_strength': f.detailed_transit.impact_strength,
-                        'historical_accuracy': f.detailed_transit.historical_accuracy,
-                        'planet': f.detailed_transit.planet
-                    } for f in forecasts
-                ])
-                df_forecasts['date'] = pd.to_datetime(df_forecasts['date'])
-                df_forecasts['change_signed'] = df_forecasts.apply(
-                    lambda row: row['change'] if row['sentiment'] != 'bearish' else -row['change'], axis=1
-                )
-                
-                # Enhanced interactive chart
-                fig = go.Figure()
-                
-                # Main price movement line with dynamic colors
-                colors = ['#f44336' if s == 'bearish' else '#4caf50' if s == 'bullish' else '#ff9800' 
-                         for s in df_forecasts['sentiment']]
-                
-                fig.add_trace(go.Scatter(
-                    x=df_forecasts['date'],
-                    y=df_forecasts['change_signed'],
-                    mode='lines+markers+text',
-                    name=f'{st.session_state.symbol} Movement',
-                    line=dict(color='#ffd700', width=4),
-                    marker=dict(
-                        size=df_forecasts['change'] * 3 + 8,
-                        color=colors,
-                        line=dict(width=2, color='black'),
-                        opacity=0.8
-                    ),
-                    text=[f"{change:+.1f}%" for change in df_forecasts['change_signed']],
-                    textposition="top center",
-                    textfont=dict(size=10, color='black'),
-                    hovertemplate='<b>%{text}</b><br>' +
-                                 'Date: %{x}<br>' +
-                                 'Movement: %{y:.2f}%<br>' +
-                                 'Event: %{customdata[0]}<br>' +
-                                 'Planet: %{customdata[1]}<br>' +
-                                 'Accuracy: %{customdata[2]:.1f}%<br>' +
-                                 'Signal: %{customdata[3]}<extra></extra>',
-                    customdata=list(zip(df_forecasts['event'], 
-                                      df_forecasts['planet'],
-                                      df_forecasts['historical_accuracy'],
-                                      df_forecasts['signal']))
-                ))
-                
-                fig.update_layout(
-                    title=f"Planetary Transit Impact Analysis - {st.session_state.symbol} ({platform.month_names[st.session_state.month]} {st.session_state.year})",
-                    xaxis_title="Date",
-                    yaxis_title="Expected Change (%)",
-                    template="plotly_dark",
-                    showlegend=True,
-                    height=700,
-                    hovermode='x unified',
-                    font=dict(color="white")
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
-                
-            except Exception as e:
-                st.error(f"Error creating chart: {str(e)}")
+            fig.add_trace(go.Scatter(
+                x=x_line, y=y_line, mode='lines',
+                line=dict(color='gray', width=1),
+                showlegend=False
+            ))
         
-        with tab5:
-            st.markdown(f"## 🌙 Advanced Planetary Transit Analysis")
-            st.markdown(f"### {st.session_state.symbol} - {platform.month_names[st.session_state.month]} {st.session_state.year}")
+        # Add house numbers
+        house_labels = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
+        for i, label in enumerate(house_labels):
+            angle = (birth_chart.ascendant + i * 30) * np.pi / 180
+            x_pos = 0.85 * np.cos(angle)
+            y_pos = 0.85 * np.sin(angle)
             
-            # [Existing transit analysis code remains the same]
-            forecasts = st.session_state.report
-            
-            # Summary Statistics Table
-            st.markdown("### 📊 Monthly Statistics Summary")
-            summary_stats = {
-                'Metric': [
-                    'Total Transits',
-                    'High Accuracy Transits (>75%)',
-                    'Strong Impact Transits',
-                    'Average Daily Change',
-                    'Maximum Single Day Impact'
-                ],
-                'Value': [
-                    len(forecasts),
-                    len([f for f in forecasts if f.detailed_transit.historical_accuracy > 75]),
-                    len([f for f in forecasts if 'Strong' in f.impact]),
-                    f"{np.mean([float(f.change.replace('+', '').replace('-', '')) for f in forecasts]):.1f}%",
-                    f"{max([abs(float(f.change.replace('+', '').replace('-', ''))) for f in forecasts]):.1f}%"
-                ]
-            }
-            
-            df_summary = pd.DataFrame(summary_stats)
-            st.dataframe(df_summary, use_container_width=True, hide_index=True)
-        
-        # Enhanced export functionality
-        if st.sidebar.button("📊 Export Complete Report"):
-            export_data = []
-            for forecast in st.session_state.report:
-                transit = forecast.detailed_transit
-                ruling_planets = platform.symbol_planetary_rulers.get(st.session_state.symbol, ['jupiter'])
-                is_ruling = transit.planet.lower() in [p.lower() for p in ruling_planets]
-                
-                row = {
-                    'Symbol': st.session_state.symbol,
-                    'Date': forecast.date,
-                    'Day': forecast.day,
-                    'Transit_Event': forecast.event,
-                    'Planet': transit.planet,
-                    'Is_Ruling_Planet': is_ruling,
-                    'Zodiac_Sign': transit.zodiac_sign,
-                    'Transit_Type': transit.transit_type,
-                    'Aspect_Type': transit.aspect_type,
-                    'Aspect_Planet': transit.aspect_planet,
-                    'Degree': transit.degree,
-                    'Sentiment': forecast.sentiment.value,
-                    'Expected_Change_%': forecast.change,
-                    'Impact_Level': forecast.impact,
-                    'Trading_Signal': forecast.signal.value,
-                    'Historical_Accuracy_%': transit.historical_accuracy,
-                    'Impact_Strength': transit.impact_strength
-                }
-                
-                # Add sector impacts
-                for sector, impact in forecast.sector_impact.items():
-                    row[f'{sector.upper()}_Impact_%'] = impact
-                
-                export_data.append(row)
-            
-            df_export = pd.DataFrame(export_data)
-            
-            csv_buffer = io.StringIO()
-            df_export.to_csv(csv_buffer, index=False)
-            csv_data = csv_buffer.getvalue()
-            
-            st.sidebar.download_button(
-                label="📥 Download Complete Analysis",
-                data=csv_data,
-                file_name=f"astro_trading_{st.session_state.symbol}_{platform.month_names[st.session_state.month]}_{st.session_state.year}.csv",
-                mime="text/csv"
+            fig.add_annotation(
+                x=x_pos, y=y_pos,
+                text=label,
+                showarrow=False,
+                font=dict(size=12, color="blue")
             )
+        
+        # Add planetary positions
+        planet_colors = {
+            'Sun': 'orange', 'Moon': 'silver', 'Mars': 'red',
+            'Mercury': 'green', 'Jupiter': 'gold', 'Venus': 'pink',
+            'Saturn': 'brown', 'Rahu': 'darkblue', 'Ketu': 'purple'
+        }
+        
+        for planet, degree in birth_chart.planetary_positions.items():
+            angle = degree * np.pi / 180
+            x_pos = 0.6 * np.cos(angle)
+            y_pos = 0.6 * np.sin(angle)
+            
+            fig.add_trace(go.Scatter(
+                x=[x_pos], y=[y_pos],
+                mode='markers+text',
+                marker=dict(color=planet_colors.get(planet, 'black'), size=15),
+                text=[planet[:2]],
+                textposition="middle center",
+                name=planet,
+                showlegend=True
+            ))
+        
+        fig.update_layout(
+            title="North Indian Vedic Birth Chart",
+            xaxis=dict(range=[-1.2, 1.2], showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(range=[-1.2, 1.2], showgrid=False, zeroline=False, showticklabels=False),
+            width=500,
+            height=500,
+            template="plotly_white"
+        )
+        
+        return fig
 
     def process_natural_query(self, query: str) -> Dict:
         """Process natural language queries like 'show astro aspect timeline bullish bearish for gold'"""
@@ -882,79 +663,6 @@ class EnhancedAstrologicalTradingPlatform:
         
         df = pd.DataFrame(table_data)
         return df
-        """Create birth chart visualization"""
-        fig = go.Figure()
-        
-        # Draw outer circle (zodiac)
-        theta = np.linspace(0, 2*np.pi, 100)
-        x_outer = np.cos(theta)
-        y_outer = np.sin(theta)
-        
-        fig.add_trace(go.Scatter(
-            x=x_outer, y=y_outer, mode='lines',
-            line=dict(color='black', width=2),
-            name='Zodiac Circle',
-            showlegend=False
-        ))
-        
-        # Draw house divisions
-        for i in range(12):
-            angle = i * 30 * np.pi / 180
-            x_line = [0.7 * np.cos(angle), np.cos(angle)]
-            y_line = [0.7 * np.sin(angle), np.sin(angle)]
-            
-            fig.add_trace(go.Scatter(
-                x=x_line, y=y_line, mode='lines',
-                line=dict(color='gray', width=1),
-                showlegend=False
-            ))
-        
-        # Add house numbers
-        house_labels = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
-        for i, label in enumerate(house_labels):
-            angle = (birth_chart.ascendant + i * 30) * np.pi / 180
-            x_pos = 0.85 * np.cos(angle)
-            y_pos = 0.85 * np.sin(angle)
-            
-            fig.add_annotation(
-                x=x_pos, y=y_pos,
-                text=label,
-                showarrow=False,
-                font=dict(size=12, color="blue")
-            )
-        
-        # Add planetary positions
-        planet_colors = {
-            'Sun': 'orange', 'Moon': 'silver', 'Mars': 'red',
-            'Mercury': 'green', 'Jupiter': 'gold', 'Venus': 'pink',
-            'Saturn': 'brown', 'Rahu': 'darkblue', 'Ketu': 'purple'
-        }
-        
-        for planet, degree in birth_chart.planetary_positions.items():
-            angle = degree * np.pi / 180
-            x_pos = 0.6 * np.cos(angle)
-            y_pos = 0.6 * np.sin(angle)
-            
-            fig.add_trace(go.Scatter(
-                x=[x_pos], y=[y_pos],
-                mode='markers+text',
-                marker=dict(color=planet_colors.get(planet, 'black'), size=15),
-                text=[planet[:2]],
-                textposition="middle center",
-                name=planet,
-                showlegend=True
-            ))
-        
-        fig.update_layout(
-            title="Vedic Birth Chart",
-            xaxis=dict(range=[-1.2, 1.2], showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(range=[-1.2, 1.2], showgrid=False, zeroline=False, showticklabels=False),
-            width=500,
-            height=500,
-            template="plotly_white"
-        )
-        
-        return fig
 
     def get_symbol_specific_influence(self, symbol: str, planet: str) -> float:
         """Calculate symbol-specific planetary influence multiplier"""
@@ -2074,80 +1782,7 @@ def main():
                     else:
                         chart_fig = platform.create_birth_chart_visualization(st.session_state.birth_chart)
                     
-    def create_birth_chart_visualization(self, birth_chart: BirthChart) -> go.Figure:
-        """Create traditional North Indian style birth chart visualization"""
-        fig = go.Figure()
-        
-        # Draw outer circle (zodiac)
-        theta = np.linspace(0, 2*np.pi, 100)
-        x_outer = np.cos(theta)
-        y_outer = np.sin(theta)
-        
-        fig.add_trace(go.Scatter(
-            x=x_outer, y=y_outer, mode='lines',
-            line=dict(color='black', width=2),
-            name='Zodiac Circle',
-            showlegend=False
-        ))
-        
-        # Draw house divisions
-        for i in range(12):
-            angle = i * 30 * np.pi / 180
-            x_line = [0.7 * np.cos(angle), np.cos(angle)]
-            y_line = [0.7 * np.sin(angle), np.sin(angle)]
-            
-            fig.add_trace(go.Scatter(
-                x=x_line, y=y_line, mode='lines',
-                line=dict(color='gray', width=1),
-                showlegend=False
-            ))
-        
-        # Add house numbers
-        house_labels = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
-        for i, label in enumerate(house_labels):
-            angle = (birth_chart.ascendant + i * 30) * np.pi / 180
-            x_pos = 0.85 * np.cos(angle)
-            y_pos = 0.85 * np.sin(angle)
-            
-            fig.add_annotation(
-                x=x_pos, y=y_pos,
-                text=label,
-                showarrow=False,
-                font=dict(size=12, color="blue")
-            )
-        
-        # Add planetary positions
-        planet_colors = {
-            'Sun': 'orange', 'Moon': 'silver', 'Mars': 'red',
-            'Mercury': 'green', 'Jupiter': 'gold', 'Venus': 'pink',
-            'Saturn': 'brown', 'Rahu': 'darkblue', 'Ketu': 'purple'
-        }
-        
-        for planet, degree in birth_chart.planetary_positions.items():
-            angle = degree * np.pi / 180
-            x_pos = 0.6 * np.cos(angle)
-            y_pos = 0.6 * np.sin(angle)
-            
-            fig.add_trace(go.Scatter(
-                x=[x_pos], y=[y_pos],
-                mode='markers+text',
-                marker=dict(color=planet_colors.get(planet, 'black'), size=15),
-                text=[planet[:2]],
-                textposition="middle center",
-                name=planet,
-                showlegend=True
-            ))
-        
-        fig.update_layout(
-            title="North Indian Vedic Birth Chart",
-            xaxis=dict(range=[-1.2, 1.2], showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(range=[-1.2, 1.2], showgrid=False, zeroline=False, showticklabels=False),
-            width=500,
-            height=500,
-            template="plotly_white"
-        )
-        
-        return fig
+                    st.plotly_chart(chart_fig, use_container_width=True)
                 
                 with col2:
                     # Birth chart details
@@ -2227,57 +1862,6 @@ def main():
                             st.error(f"**{market}**\n📉 Bearish\n({bearish_count} signals)")
                         else:
                             st.warning(f"**{market}**\n➡️ Neutral\n(Mixed signals)")
-                
-                # Strongest Planetary Influences
-                st.markdown("### 🌟 Strongest Planetary Influences Today")
-                
-                strong_transits = [t for t in st.session_state.current_transits if t.strength == 'Strong']
-                if strong_transits:
-                    for transit in strong_transits[:3]:  # Show top 3
-                        with st.expander(f"🌟 {transit.planet} in {transit.nakshatra} - {transit.strength} Impact"):
-                            col1, col2, col3 = st.columns(3)
-                            
-                            with col1:
-                                st.markdown(f"**Planet:** {transit.planet}")
-                                st.markdown(f"**Degree:** {transit.degree:.2f}°")
-                                st.markdown(f"**House:** {transit.house}")
-                            
-                            with col2:
-                                st.markdown(f"**Nakshatra:** {transit.nakshatra}")
-                                st.markdown(f"**Lord:** {transit.nakshatra_lord}")
-                                st.markdown(f"**Sub Lord:** {transit.sub_lord}")
-                            
-                            with col3:
-                                st.markdown(f"**Aspect:** {transit.aspect_type}")
-                                st.markdown(f"**Time:** {transit.time}")
-                                st.markdown(f"**Strength:** {transit.strength}")
-                            
-                            # Market impacts for this transit
-                            st.markdown("**Market Impact:**")
-                            impact_cols = st.columns(4)
-                            market_list = list(transit.market_impact.items())
-                            
-                            for idx, (market, impact) in enumerate(market_list[:4]):
-                                with impact_cols[idx % 4]:
-                                    if 'Bullish' in impact:
-                                        st.success(f"{market}: {impact}")
-                                    elif 'Bearish' in impact:
-                                        st.error(f"{market}: {impact}")
-                                    else:
-                                        st.info(f"{market}: {impact}")
-                
-                # Export functionality
-                if st.button("📥 Export Transit Analysis"):
-                    csv_buffer = io.StringIO()
-                    df_transits.to_csv(csv_buffer, index=False)
-                    csv_data = csv_buffer.getvalue()
-                    
-                    st.download_button(
-                        label="📥 Download Transit Data CSV",
-                        data=csv_data,
-                        file_name=f"transit_analysis_{transit_date}.csv",
-                        mime="text/csv"
-                    )
             
             # Instructions
             if 'birth_chart' not in st.session_state or 'current_transits' not in st.session_state:
@@ -2336,28 +1920,6 @@ def main():
             
             # Render Astro Calendar Grid
             render_astro_calendar_grid(forecasts, month_name, st.session_state.year, platform)
-            
-            # Additional daily details
-            st.markdown("### 📋 Complete Daily Transit Details")
-            for forecast in forecasts:
-                if abs(float(forecast.change.replace('+', '').replace('-', ''))) > 0.5:
-                    transit = forecast.detailed_transit
-                    
-                    # Create expandable sections for each day
-                    with st.expander(f"📅 {forecast.date} (Day {forecast.day}) - {forecast.signal.value} {forecast.change}%"):
-                        st.markdown(f"**{forecast.event}**")
-                        
-                        zodiac_name = platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()
-                        st.markdown(f"_{transit.planet} in {zodiac_name} • {transit.aspect_type.title()} • Accuracy: {transit.historical_accuracy:.1f}%_")
-                        
-                        # Display sector impacts
-                        if forecast.sector_impact:
-                            st.markdown("**Sector Impacts:**")
-                            for sector, impact in forecast.sector_impact.items():
-                                if impact > 0:
-                                    st.success(f"{sector.upper()}: +{impact:.1f}%")
-                                else:
-                                    st.error(f"{sector.upper()}: {impact:.1f}%")
         
         with tab3:
             st.markdown(f"# 📊 {st.session_state.symbol} Analysis")
@@ -2382,27 +1944,6 @@ def main():
             with col4:
                 st.metric("⭐ High Accuracy Transits", high_accuracy_transits)
             
-            # Overall sentiment with professional display
-            bullish_days = len([f for f in forecasts if f.sentiment == Sentiment.BULLISH])
-            bearish_days = len([f for f in forecasts if f.sentiment == Sentiment.BEARISH])
-            
-            st.markdown("---")
-            if bullish_days > bearish_days:
-                st.success(f"📈 **OVERALL BULLISH MONTH** | Bullish Days: {bullish_days} | Bearish Days: {bearish_days}")
-            elif bearish_days > bullish_days:
-                st.error(f"📉 **OVERALL BEARISH MONTH** | Bearish Days: {bearish_days} | Bullish Days: {bullish_days}")
-            else:
-                st.warning(f"➡️ **NEUTRAL MONTH** | Balanced: {bullish_days} Bullish | {bearish_days} Bearish")
-            
-            # Symbol info
-            ruling_planets = platform.symbol_planetary_rulers.get(st.session_state.symbol, ['jupiter', 'saturn'])
-            st.info(f"🪐 **Ruling Planetary Influences for {st.session_state.symbol}**")
-            st.markdown(f"**Primary Ruling Planets:** {', '.join([p.title() for p in ruling_planets])}")
-            st.markdown(f"_These planets have enhanced influence on {st.session_state.symbol}'s price movements._")
-            
-            # Advanced Table Format - Monthly Forecast
-            st.markdown("### 📊 Advanced Monthly Forecast Table")
-            
             # Create comprehensive table data
             table_data = []
             for forecast in forecasts[:21]:  # Show first 21 days
@@ -2421,79 +1962,6 @@ def main():
             
             df_table = pd.DataFrame(table_data)
             st.dataframe(df_table, use_container_width=True, height=400)
-            
-            # Weekly Summary Table
-            st.markdown("### 📅 Weekly Summary Analysis")
-            weeks = [forecasts[i:i+7] for i in range(0, len(forecasts), 7)]
-            
-            weekly_data = []
-            for week_num, week_forecasts in enumerate(weeks[:4], 1):  # Show 4 weeks
-                if week_forecasts:
-                    week_bullish = len([f for f in week_forecasts if f.sentiment == Sentiment.BULLISH])
-                    week_bearish = len([f for f in week_forecasts if f.sentiment == Sentiment.BEARISH])
-                    week_avg_change = np.mean([float(f.change.replace('+', '').replace('-', '')) for f in week_forecasts])
-                    
-                    if week_bullish > week_bearish:
-                        week_sentiment = "BULLISH"
-                    elif week_bearish > week_bullish:
-                        week_sentiment = "BEARISH"
-                    else:
-                        week_sentiment = "NEUTRAL"
-                    
-                    weekly_data.append({
-                        'Week': f"Week {week_num}",
-                        'Date Range': f"{week_forecasts[0].date} to {week_forecasts[-1].date}",
-                        'Bullish Days': week_bullish,
-                        'Bearish Days': week_bearish,
-                        'Avg Change %': f"{week_avg_change:+.1f}%",
-                        'Overall Sentiment': week_sentiment,
-                        'Strong Transits': len([f for f in week_forecasts if 'Strong' in f.impact])
-                    })
-            
-            df_weekly = pd.DataFrame(weekly_data)
-            st.dataframe(df_weekly, use_container_width=True)
-            
-            # Advanced Flow Chart Format - Daily Analysis
-            st.markdown("### 🔄 Daily Transit Flow Chart")
-            
-            # Create flow chart style layout
-            for i, forecast in enumerate(forecasts[:15]):  # Show first 15 days
-                if i % 5 == 0:  # Every 5 days, create new row
-                    cols = st.columns(5)
-                
-                col_index = i % 5
-                with cols[col_index]:
-                    # Professional compact card
-                    with st.container():
-                        st.markdown(f"**📅 Day {forecast.day}**")
-                        st.markdown(f"*{forecast.date.split('-')[1]}/{forecast.date.split('-')[2]}*")
-                        
-                        # Compact sentiment display
-                        if forecast.sentiment == Sentiment.BULLISH:
-                            st.success(f"📈 {forecast.change}%")
-                        elif forecast.sentiment == Sentiment.BEARISH:
-                            st.error(f"📉 {forecast.change}%")
-                        else:
-                            st.warning(f"➡️ {forecast.change}%")
-                        
-                        # Signal display
-                        signal_display = {
-                            SignalType.LONG: "🟢 BUY",
-                            SignalType.SHORT: "🔴 SELL",
-                            SignalType.HOLD: "🟡 HOLD"
-                        }
-                        st.markdown(f"**{signal_display.get(forecast.signal, '🟡 HOLD')}**")
-                        st.markdown(f"*{forecast.detailed_transit.planet}*")
-                        
-                        # Add flow arrow between cards
-                        if col_index < 4:  # Don't add arrow after last column
-                            st.markdown("→", help="Flow continues")
-                
-                # Add vertical separator every 5 days
-                if (i + 1) % 5 == 0:
-                    st.markdown("---")
-                    st.markdown("⬇️ **Continue to next period**")
-                    st.markdown("---")
         
         with tab4:
             st.markdown(f"## 📈 {st.session_state.symbol} Astrological Movement Graph")
@@ -2534,12 +2002,12 @@ def main():
                     marker=dict(
                         size=df_forecasts['change'] * 3 + 8,
                         color=colors,
-                        line=dict(width=2, color='black'),  # Changed from white to black
+                        line=dict(width=2, color='black'),
                         opacity=0.8
                     ),
                     text=[f"{change:+.1f}%" for change in df_forecasts['change_signed']],
                     textposition="top center",
-                    textfont=dict(size=10, color='black'),  # Changed from white to black
+                    textfont=dict(size=10, color='black'),
                     hovertemplate='<b>%{text}</b><br>' +
                                  'Date: %{x}<br>' +
                                  'Movement: %{y:.2f}%<br>' +
@@ -2552,92 +2020,6 @@ def main():
                                       df_forecasts['historical_accuracy'],
                                       df_forecasts['signal']))
                 ))
-                
-                # Add cumulative movement
-                cumulative_change = df_forecasts['change_signed'].cumsum()
-                fig.add_trace(go.Scatter(
-                    x=df_forecasts['date'],
-                    y=cumulative_change,
-                    mode='lines',
-                    name='Cumulative Movement',
-                    line=dict(color='#ff6b35', width=3, dash='dash'),
-                    hovertemplate='Cumulative: %{y:.2f}%<extra></extra>'
-                ))
-                
-                # Add zero line
-                fig.add_hline(y=0, line_dash="solid", line_color="white", opacity=0.3, line_width=1)
-                
-                # Enhanced pivot points with black text
-                if 'pivot_points' in st.session_state and st.session_state.pivot_points:
-                    pivot_points = st.session_state.pivot_points
-                    pivot_dates = [pd.to_datetime(p.date) for p in pivot_points]
-                    pivot_values = [p.expected_move for p in pivot_points]
-                    pivot_types = [p.pivot_type for p in pivot_points]
-                    
-                    # Support levels
-                    support_dates = [d for d, t in zip(pivot_dates, pivot_types) if t == 'support']
-                    support_values = [v for v, t in zip(pivot_values, pivot_types) if t == 'support']
-                    
-                    if support_dates:
-                        fig.add_trace(go.Scatter(
-                            x=support_dates,
-                            y=support_values,
-                            mode='markers+text',
-                            name='Support Levels',
-                            marker=dict(color='#4caf50', size=18, symbol='triangle-up', 
-                                       line=dict(width=3, color='black')),  # Changed from white to black
-                            text=[f"Support<br>{v:+.1f}%" for v in support_values],
-                            textposition="bottom center",
-                            textfont=dict(size=10, color='black'),  # Changed from white to black
-                            hovertemplate='Support Level<br>Date: %{x}<br>Level: %{y:.2f}%<extra></extra>'
-                        ))
-                    
-                    # Resistance levels
-                    resistance_dates = [d for d, t in zip(pivot_dates, pivot_types) if t == 'resistance']
-                    resistance_values = [v for v, t in zip(pivot_values, pivot_types) if t == 'resistance']
-                    
-                    if resistance_dates:
-                        fig.add_trace(go.Scatter(
-                            x=resistance_dates,
-                            y=resistance_values,
-                            mode='markers+text',
-                            name='Resistance Levels',
-                            marker=dict(color='#f44336', size=18, symbol='triangle-down', 
-                                       line=dict(width=3, color='black')),  # Changed from white to black
-                            text=[f"Resistance<br>{v:+.1f}%" for v in resistance_values],
-                            textposition="top center",
-                            textfont=dict(size=10, color='black'),  # Changed from white to black
-                            hovertemplate='Resistance Level<br>Date: %{x}<br>Level: %{y:.2f}%<extra></extra>'
-                        ))
-                
-                # Enhanced annotations with black text
-                major_swings = df_forecasts[df_forecasts['change'] > 2]
-                for _, swing in major_swings.iterrows():
-                    fig.add_annotation(
-                        x=swing['date'],
-                        y=swing['change_signed'],
-                        text=f"<b>Major Transit</b><br>{swing['change_signed']:+.1f}%<br>{swing['planet']} Impact",
-                        showarrow=True,
-                        arrowhead=2,
-                        arrowsize=1.5,
-                        arrowwidth=3,
-                        arrowcolor="#ffd700",
-                        font=dict(size=11, color="black"),  # Changed from white to black
-                        bgcolor="rgba(255, 215, 0, 0.9)",
-                        bordercolor="black",  # Changed border to black
-                        borderwidth=2,
-                        ax=0,
-                        ay=-50 if swing['change_signed'] > 0 else 50
-                    )
-                
-                # Color zones
-                max_val = max(df_forecasts['change_signed'].max(), 5)
-                min_val = min(df_forecasts['change_signed'].min(), -5)
-                
-                fig.add_hrect(y0=0, y1=max_val, 
-                             fillcolor="rgba(76, 175, 80, 0.1)", layer="below", line_width=0)
-                fig.add_hrect(y0=min_val, y1=0, 
-                             fillcolor="rgba(244, 67, 54, 0.1)", layer="below", line_width=0)
                 
                 fig.update_layout(
                     title=f"Planetary Transit Impact Analysis - {st.session_state.symbol} ({platform.month_names[st.session_state.month]} {st.session_state.year})",
@@ -2654,229 +2036,29 @@ def main():
                 
             except Exception as e:
                 st.error(f"Error creating chart: {str(e)}")
-            
-            # Dynamic pivot points summary
-            if 'pivot_points' in st.session_state and st.session_state.pivot_points:
-                st.markdown("### 🎯 Dynamic Pivot Points & Price Levels")
-                
-                pivot_data = []
-                for pivot in st.session_state.pivot_points:
-                    pivot_data.append({
-                        'Date': pivot.date,
-                        'Type': pivot.pivot_type.upper(),
-                        'Expected Move': f"{pivot.expected_move:+.2f}%",
-                        'Confidence': f"{pivot.confidence:.1f}%",
-                        'Price Level': f"{pivot.price_level:.2f}"
-                    })
-                
-                df_pivots = pd.DataFrame(pivot_data)
-                st.dataframe(df_pivots, use_container_width=True)
-            
-            # Additional analysis charts
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Planetary influence chart
-                planet_impacts = df_forecasts.groupby('planet')['change'].mean().reset_index()
-                fig_planets = px.bar(
-                    planet_impacts,
-                    x='planet',
-                    y='change',
-                    title=f"Average Planetary Impact on {st.session_state.symbol}",
-                    color='change',
-                    color_continuous_scale='RdYlGn'
-                )
-                fig_planets.update_layout(template="plotly_dark")
-                st.plotly_chart(fig_planets, use_container_width=True)
-            
-            with col2:
-                # Signal distribution
-                signal_counts = df_forecasts['signal'].value_counts()
-                fig_signals = px.pie(
-                    values=signal_counts.values,
-                    names=signal_counts.index,
-                    title=f"Trading Signal Distribution - {st.session_state.symbol}",
-                    color_discrete_map={'LONG': '#4caf50', 'SHORT': '#f44336', 'HOLD': '#ff9800'}
-                )
-                fig_signals.update_layout(template="plotly_dark")
-                st.plotly_chart(fig_signals, use_container_width=True)
         
         with tab5:
             st.markdown(f"## 🌙 Advanced Planetary Transit Analysis")
             st.markdown(f"### {st.session_state.symbol} - {platform.month_names[st.session_state.month]} {st.session_state.year}")
             
-            # Get month name and calculate needed variables
-            month_name = platform.month_names[st.session_state.month]
             forecasts = st.session_state.report
-            bullish_days = len([f for f in forecasts if f.sentiment == Sentiment.BULLISH])
-            bearish_days = len([f for f in forecasts if f.sentiment == Sentiment.BEARISH])
-            
-            # Symbol-specific ruling planet analysis
-            ruling_planets = platform.symbol_planetary_rulers.get(st.session_state.symbol, ['jupiter', 'saturn'])
-            
-            # Use expandable section for better organization
-            with st.expander("🪐 Symbol-Specific Planetary Rulership", expanded=True):
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.metric(
-                        label="Primary Ruling Planets",
-                        value=', '.join([p.title() for p in ruling_planets]),
-                        delta="Enhanced Analysis"
-                    )
-                
-                with col2:
-                    st.metric(
-                        label="Symbol Type",
-                        value=st.session_state.analysis_type.title(),
-                        delta="Specific Analysis"
-                    )
-                
-                with col3:
-                    st.metric(
-                        label="Enhanced Sensitivity",
-                        value="50% Stronger",
-                        delta="From Ruling Planets"
-                    )
-            
-            # Get unique transits for the month with enhanced analysis
-            unique_transits = {}
-            for forecast in forecasts:
-                transit = forecast.detailed_transit
-                key = f"{transit.planet}_{transit.zodiac_sign}_{transit.transit_type}"
-                if key not in unique_transits:
-                    unique_transits[key] = {
-                        'transit': transit,
-                        'forecasts': [],
-                        'total_impact': 0,
-                        'sector_impacts': {},
-                        'is_ruling_planet': transit.planet.lower() in [p.lower() for p in ruling_planets]
-                    }
-                unique_transits[key]['forecasts'].append(forecast)
-                unique_transits[key]['total_impact'] += abs(float(forecast.change.replace('+', '').replace('-', '')))
-                
-                for sector, impact in forecast.sector_impact.items():
-                    if sector not in unique_transits[key]['sector_impacts']:
-                        unique_transits[key]['sector_impacts'][sector] = []
-                    unique_transits[key]['sector_impacts'][sector].append(impact)
-            
-            # Sort by impact strength and ruling planet priority
-            sorted_transits = sorted(
-                unique_transits.items(), 
-                key=lambda x: (x[1]['is_ruling_planet'], x[1]['total_impact']), 
-                reverse=True
-            )
-            
-            st.markdown(f"### 🌟 Major Planetary Transits - {month_name} {st.session_state.year}")
-            
-            # Professional transit display
-            transit_table_data = []
-            
-            for transit_key, transit_data in sorted_transits[:6]:  # Show top 6 major transits
-                transit = transit_data['transit']
-                avg_impact = transit_data['total_impact'] / len(transit_data['forecasts'])
-                is_ruling = transit_data['is_ruling_planet']
-                
-                # Get all dates for this transit
-                transit_dates = [f.date for f in transit_data['forecasts']]
-                date_range = f"{min(transit_dates)} to {max(transit_dates)}" if len(transit_dates) > 1 else transit_dates[0]
-                
-                # Calculate average sector impacts
-                avg_sector_impacts = {}
-                for sector, impacts in transit_data['sector_impacts'].items():
-                    avg_sector_impacts[sector] = np.mean(impacts)
-                
-                # Enhanced transit description
-                if transit.transit_type == 'retrograde':
-                    transit_desc = f"{transit.planet} Retrograde in {platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()}"
-                    impact_multiplier = 1.3
-                elif transit.transit_type == 'direct':
-                    transit_desc = f"{transit.planet} Direct in {platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()}"
-                    impact_multiplier = 1.2
-                elif transit.transit_type == 'enters':
-                    transit_desc = f"{transit.planet} enters {platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()}"
-                    impact_multiplier = 1.1
-                elif transit.transit_type == 'aspect':
-                    transit_desc = f"{transit.planet} {transit.aspect_type} {transit.aspect_planet}"
-                    impact_multiplier = 1.15
-                else:
-                    transit_desc = f"{transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()}"
-                    impact_multiplier = 1.0
-                
-                if is_ruling:
-                    impact_multiplier *= 1.5
-                
-                # Add to table data
-                impact_value = avg_impact * impact_multiplier
-                zodiac_info = platform.zodiac_signs[transit.zodiac_sign] if transit.zodiac_sign in platform.zodiac_signs else None
-                element = zodiac_info.element if zodiac_info else 'Unknown'
-                quality = zodiac_info.quality if zodiac_info else 'Unknown'
-                
-                transit_table_data.append({
-                    'Transit': transit_desc,
-                    'Dates': date_range,
-                    'Duration': f"{len(transit_dates)} day{'s' if len(transit_dates) > 1 else ''}",
-                    'Impact %': f"{impact_value:+.1f}%",
-                    'Accuracy %': f"{transit.historical_accuracy:.1f}%",
-                    'Strength': transit.impact_strength,
-                    'Element': element,
-                    'Quality': quality,
-                    'Ruling Planet': "✓" if is_ruling else "—"
-                })
-                
-                # Display professional transit card
-                with st.expander(f"🌟 {transit_desc}", expanded=False):
-                    if is_ruling:
-                        st.success("👑 RULING PLANET - Enhanced Impact on Your Symbol")
-                    
-                    # Professional metrics display
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.metric("⏱️ Duration", f"{len(transit_dates)} day{'s' if len(transit_dates) > 1 else ''}")
-                    with col2:
-                        st.metric("📈 Impact", f"{impact_value:+.1f}%")
-                    with col3:
-                        st.metric("🎯 Accuracy", f"{transit.historical_accuracy:.1f}%")
-                    with col4:
-                        st.metric("🌟 Element", element)
-                    
-                    # Sector impacts in compact format
-                    if avg_sector_impacts:
-                        st.markdown("**📊 Sector Impact Analysis:**")
-                        sector_cols = st.columns(min(4, len(avg_sector_impacts)))
-                        for i, (sector, avg_impact) in enumerate(list(avg_sector_impacts.items())[:4]):
-                            with sector_cols[i]:
-                                if is_ruling:
-                                    avg_impact *= 1.5
-                                st.metric(f"{sector.upper()}", f"{avg_impact:+.1f}%")
-            
-            # Comprehensive Transit Analysis Table
-            st.markdown("### 📋 Complete Transit Analysis Table")
-            if transit_table_data:
-                df_transits = pd.DataFrame(transit_table_data)
-                st.dataframe(df_transits, use_container_width=True, height=300)
             
             # Summary Statistics Table
             st.markdown("### 📊 Monthly Statistics Summary")
             summary_stats = {
                 'Metric': [
                     'Total Transits',
-                    'Ruling Planet Transits', 
                     'High Accuracy Transits (>75%)',
                     'Strong Impact Transits',
                     'Average Daily Change',
-                    'Maximum Single Day Impact',
-                    'Month Sentiment Score'
+                    'Maximum Single Day Impact'
                 ],
                 'Value': [
                     len(forecasts),
-                    len([t for t in sorted_transits if t[1]['is_ruling_planet']]),
                     len([f for f in forecasts if f.detailed_transit.historical_accuracy > 75]),
                     len([f for f in forecasts if 'Strong' in f.impact]),
                     f"{np.mean([float(f.change.replace('+', '').replace('-', '')) for f in forecasts]):.1f}%",
-                    f"{max([abs(float(f.change.replace('+', '').replace('-', ''))) for f in forecasts]):.1f}%",
-                    f"{(bullish_days - bearish_days) / len(forecasts) * 100:+.0f}% Bullish Bias"
+                    f"{max([abs(float(f.change.replace('+', '').replace('-', ''))) for f in forecasts]):.1f}%"
                 ]
             }
             
@@ -2908,9 +2090,7 @@ def main():
                     'Impact_Level': forecast.impact,
                     'Trading_Signal': forecast.signal.value,
                     'Historical_Accuracy_%': transit.historical_accuracy,
-                    'Impact_Strength': transit.impact_strength,
-                    'Element': platform.zodiac_signs[transit.zodiac_sign].element if transit.zodiac_sign in platform.zodiac_signs else 'Unknown',
-                    'Quality': platform.zodiac_signs[transit.zodiac_sign].quality if transit.zodiac_sign in platform.zodiac_signs else 'Unknown'
+                    'Impact_Strength': transit.impact_strength
                 }
                 
                 # Add sector impacts

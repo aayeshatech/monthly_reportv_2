@@ -675,12 +675,56 @@ def main():
             st.markdown("### 📊 Stock Analysis")
             
             # Symbol-specific Analysis
-            st.markdown(f"#### 📈 {st.session_state.symbol} - Astrological Analysis")
+            month_name = platform.month_names[st.session_state.month]
+            st.markdown(f"#### 📈 {st.session_state.symbol} - {month_name} {st.session_state.year} Astrological Analysis")
             
             forecasts = st.session_state.report
-            significant_forecasts = [f for f in forecasts if abs(float(f.change.replace('+', '').replace('-', ''))) > 1.5]
             
-            for forecast in significant_forecasts[:8]:
+            # Monthly Summary Stats
+            col1, col2, col3, col4 = st.columns(4)
+            
+            total_bullish_impact = sum(float(f.change.replace('+', '').replace('-', '')) for f in forecasts if f.sentiment == Sentiment.BULLISH)
+            total_bearish_impact = sum(float(f.change.replace('+', '').replace('-', '')) for f in forecasts if f.sentiment == Sentiment.BEARISH)
+            avg_daily_change = np.mean([float(f.change.replace('+', '').replace('-', '')) for f in forecasts])
+            strong_transits = len([f for f in forecasts if 'Strong' in f.impact or 'Very Strong' in f.impact])
+            
+            with col1:
+                st.markdown(f"""
+                <div class="stat-card">
+                    <h3 style="color: #4caf50;">+{total_bullish_impact:.1f}%</h3>
+                    <p>Total Bullish Impact</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f"""
+                <div class="stat-card">
+                    <h3 style="color: #f44336;">-{total_bearish_impact:.1f}%</h3>
+                    <p>Total Bearish Impact</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown(f"""
+                <div class="stat-card">
+                    <h3 style="color: #ff9800;">{avg_daily_change:.1f}%</h3>
+                    <p>Avg Daily Impact</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col4:
+                st.markdown(f"""
+                <div class="stat-card">
+                    <h3 style="color: #e91e63;">{strong_transits}</h3>
+                    <p>Strong Transits</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Date-wise Analysis for Selected Month
+            st.markdown(f"#### 📅 Date-wise Planetary Transit Impact Analysis")
+            
+            # Show ALL forecasts for the selected month, not just significant ones
+            for forecast in forecasts:
                 transit = forecast.detailed_transit
                 
                 st.markdown(f"""

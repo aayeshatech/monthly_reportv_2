@@ -565,12 +565,8 @@ def render_front_page():
 
 def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year: int, platform):
     """Render astro calendar in the requested format"""
-    st.markdown(f"""
-    <div class="symbol-header">
-        <h2 style="color: #ffd700; margin: 0;">📅 Monthly Planetary Transit Forecast</h2>
-        <p style="color: #b8b8b8; margin: 0.5rem 0 0 0;">{month_name} {year}</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"## 📅 Monthly Planetary Transit Forecast")
+    st.markdown(f"### {month_name} {year}")
     
     # Filter significant transits only
     significant_forecasts = [f for f in forecasts if abs(float(f.change.replace('+', '').replace('-', ''))) > 1.0][:9]
@@ -759,12 +755,8 @@ def main():
                     """, unsafe_allow_html=True)
         
         with tab2:
-            st.markdown(f"""
-            <div class="symbol-header">
-                <h2 style="color: #ffd700; margin: 0;">📊 {st.session_state.symbol} Analysis</h2>
-                <p style="color: #b8b8b8; margin: 0.5rem 0 0 0;">{platform.month_names[st.session_state.month]} {st.session_state.year} Astrological Analysis</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"## 📊 {st.session_state.symbol} Analysis")
+            st.markdown(f"### {platform.month_names[st.session_state.month]} {st.session_state.year} Astrological Analysis")
             
             forecasts = st.session_state.report
             
@@ -854,12 +846,8 @@ def main():
                             """, unsafe_allow_html=True)
         
         with tab3:
-            st.markdown(f"""
-            <div class="symbol-header">
-                <h2 style="color: #ffd700; margin: 0;">📈 {st.session_state.symbol} Astrological Movement Graph</h2>
-                <p style="color: #b8b8b8; margin: 0.5rem 0 0 0;">Dynamic Planetary Transit Impact Visualization</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"## 📈 {st.session_state.symbol} Astrological Movement Graph")
+            st.markdown("### Dynamic Planetary Transit Impact Visualization")
             
             # Create enhanced forecast dataframe
             try:
@@ -1064,12 +1052,8 @@ def main():
                 st.plotly_chart(fig_signals, use_container_width=True)
         
         with tab4:
-            st.markdown(f"""
-            <div class="symbol-header">
-                <h2 style="color: #ffd700; margin: 0;">🌙 Advanced Planetary Transit Analysis</h2>
-                <p style="color: #b8b8b8; margin: 0.5rem 0 0 0;">{st.session_state.symbol} - {platform.month_names[st.session_state.month]} {st.session_state.year}</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"## 🌙 Advanced Planetary Transit Analysis")
+            st.markdown(f"### {st.session_state.symbol} - {platform.month_names[st.session_state.month]} {st.session_state.year}")
             
             # Symbol-specific ruling planet analysis
             ruling_planets = platform.symbol_planetary_rulers.get(st.session_state.symbol, ['jupiter'])

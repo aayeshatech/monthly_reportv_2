@@ -724,57 +724,86 @@ def main():
             st.markdown(f"#### 📅 Date-wise Planetary Transit Impact Analysis")
             
             # Show ALL forecasts for the selected month, not just significant ones
-            for forecast in forecasts:
                 transit = forecast.detailed_transit
                 
-                st.markdown(f"""
-                <div class="transit-detail-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h4 style="color: #ffd700; margin: 0;">{forecast.date} - {forecast.event}</h4>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <span style="background-color: {'#4caf50' if forecast.sentiment == Sentiment.BULLISH else '#f44336' if forecast.sentiment == Sentiment.BEARISH else '#ff9800'}; 
-                                         color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">
-                                {forecast.sentiment.value.upper()}
-                            </span>
-                            <span style="background-color: {'#4caf50' if forecast.signal == SignalType.LONG else '#f44336' if forecast.signal == SignalType.SHORT else '#ff9800'}; 
-                                         color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">
-                                {forecast.signal.value}
-                            </span>
+                # Determine row background color based on impact strength
+                if abs(float(forecast.change.replace('+', '').replace('-', ''))) > 2:
+                    row_style = "border-left: 5px solid #ffd700;"
+                elif abs(float(forecast.change.replace('+', '').replace('-', ''))) > 1:
+                    row_style = "border-left: 3px solid #ff9800;"
+                else:
+                    row_style = "border-left: 2px solid #666;"
+                
+                # Create compact daily view
+                change_value = float(forecast.change.replace('+', '').replace('-', ''))
+                change_color = "#4caf50" if '+' in forecast.change else "#f44336" if '-' in forecast.change else "#ff9800"
+                
+                col1, col2 = st.columns([3, 1])
+                
+                with col1:
+                    # Create sector impacts text separately to avoid f-string issues
+                    sector_impacts_html = ""
+                    if forecast.sector_impact:
+                        sector_spans = []
+                        for sector, impact in forecast.sector_impact.items():
+                            bg_color = "rgba(76, 175, 80, 0.2)" if impact > 0 else "rgba(244, 67, 54, 0.2)"
+                            text_color = "#4caf50" if impact > 0 else "#f44336"
+                            sector_spans.append(f'<span style="background-color: {bg_color}; color: {text_color}; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem;">{sector.upper()}: {impact:+.1f}%</span>')
+                        
+                        sector_impacts_html = f"""
+                        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #444;">
+                            <div style="font-size: 0.8rem; color: #ffd700; margin-bottom: 4px;">Sector Impacts:</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                {" ".join(sector_spans)}
+                            </div>
                         </div>
-                    </div>
+                        """
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 15px;">
-                        <div>
-                            <div style="color: #ffd700; font-weight: bold; margin-bottom: 5px;">Transit Details</div>
-                            <div style="font-size: 0.9rem;">Planet: {transit.planet}</div>
-                            <div style="font-size: 0.9rem;">Sign: {platform.zodiac_signs[transit.zodiac_sign].name}</div>
-                            <div style="font-size: 0.9rem;">Type: {transit.transit_type.title()}</div>
-                            <div style="font-size: 0.9rem;">Degree: {transit.degree:.1f}°</div>
+                    st.markdown(f"""
+                    <div class="forecast-card" style="{row_style}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div>
+                                <div style="color: #ffd700; font-weight: bold; font-size: 1.1rem;">{forecast.date}</div>
+                                <div style="font-size: 0.8rem; color: #b8b8b8;">Day {forecast.day}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: {change_color}; font-size: 1.3rem; font-weight: bold; margin-bottom: 2px;">
+                                    {forecast.change}%
+                                </div>
+                                <div style="background-color: {'#4caf50' if forecast.signal == SignalType.LONG else '#f44336' if forecast.signal == SignalType.SHORT else '#ff9800'}; 
+                                           color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">
+                                    {forecast.signal.value}
+                                </div>
+                            </div>
                         </div>
                         
-                        <div>
-                            <div style="color: #ffd700; font-weight: bold; margin-bottom: 5px;">Market Impact</div>
-                            <div style="font-size: 0.9rem;">Expected: <span style="color: {'#4caf50' if '+' in forecast.change else '#f44336'}; font-weight: bold;">{forecast.change}%</span></div>
-                            <div style="font-size: 0.9rem;">Strength: {transit.impact_strength}</div>
-                            <div style="font-size: 0.9rem;">Accuracy: {transit.historical_accuracy:.1f}%</div>
+                        <div style="margin-bottom: 8px;">
+                            <div style="color: #fff; font-size: 1rem; margin-bottom: 4px;">{forecast.event}</div>
+                            <div style="font-size: 0.8rem; color: #b8b8b8;">
+                                {transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name} • {transit.aspect_type.title()}
+                            </div>
                         </div>
                         
-                        <div>
-                            <div style="color: #ffd700; font-weight: bold; margin-bottom: 5px;">Upcoming Factors</div>
-                            <div style="font-size: 0.9rem;">Element: {platform.zodiac_signs[transit.zodiac_sign].element}</div>
-                            <div style="font-size: 0.9rem;">Quality: {platform.zodiac_signs[transit.zodiac_sign].quality}</div>
-                            <div style="font-size: 0.9rem;">Duration: 3-7 days</div>
+                        <div style="font-size: 0.7rem; color: #b8b8b8; margin-bottom: 8px;">
+                            Sentiment: <span style="color: {change_color};">{forecast.sentiment.value.upper()}</span>
+                        </div>
+                        
+                        {sector_impacts_html}
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown(f"""
+                    <div class="historical-card">
+                        <div style="color: #ff9800; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">📊 Analysis</div>
+                        <div style="font-size: 0.8rem; margin-bottom: 3px;">Strength: {transit.impact_strength}</div>
+                        <div style="font-size: 0.8rem; margin-bottom: 3px;">Accuracy: {transit.historical_accuracy:.1f}%</div>
+                        <div style="font-size: 0.8rem; margin-bottom: 3px;">Degree: {transit.degree:.1f}°</div>
+                        <div style="font-size: 0.8rem; color: #ffd700;">
+                            {platform.zodiac_signs[transit.zodiac_sign].element}
                         </div>
                     </div>
-                    
-                    {f'''<div style="border-top: 1px solid #555; padding-top: 10px;">
-                        <div style="color: #ffd700; font-weight: bold; margin-bottom: 8px;">Sector Performance Impact:</div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 15px;">
-                            {" ".join([f'<span style="background-color: {"rgba(76, 175, 80, 0.2)" if impact > 0 else "rgba(244, 67, 54, 0.2)"}; color: {"#4caf50" if impact > 0 else "#f44336"}; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem;">{sector.upper()}: {impact:+.1f}%</span>' for sector, impact in forecast.sector_impact.items()])}
-                        </div>
-                    </div>''' if forecast.sector_impact else ''}
-                </div>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
         
         with tab3:
             st.markdown("### 📈 Astrological Movement Graph")
@@ -796,29 +825,59 @@ def main():
                 lambda row: row['change'] if row['sentiment'] != 'bearish' else -row['change'], axis=1
             )
             
-            # Enhanced price movement chart with pivot points
+            # Enhanced price movement chart with clearer date-wise movements
             fig = go.Figure()
             
-            # Add main price line
+            # Add main price line with better visibility
             fig.add_trace(go.Scatter(
                 x=df_forecasts['date'],
                 y=df_forecasts['change_signed'],
-                mode='lines+markers',
-                name='Expected Movement',
-                line=dict(color='#ffd700', width=3),
+                mode='lines+markers+text',
+                name='Daily Movement',
+                line=dict(color='#ffd700', width=4),
                 marker=dict(
-                    size=df_forecasts['change'] * 3,
+                    size=df_forecasts['change'] * 4 + 8,
                     color=df_forecasts['change_signed'], 
-                    colorscale=['red', 'orange', 'green'], 
+                    colorscale=['red', 'orange', 'yellow', 'lightgreen', 'green'], 
                     showscale=True,
-                    colorbar=dict(title="Expected Change %")
+                    colorbar=dict(title="Daily Change %", titleside="right"),
+                    line=dict(width=2, color='white')
                 ),
-                hovertemplate='<b>%{text}</b><br>Date: %{x}<br>Change: %{y:.2f}%<br>Accuracy: %{customdata:.1f}%<extra></extra>',
-                text=df_forecasts['event'],
-                customdata=df_forecasts['historical_accuracy']
+                text=[f"{change:+.1f}%" for change in df_forecasts['change_signed']],
+                textposition="top center",
+                textfont=dict(size=10, color='white'),
+                hovertemplate='<b>%{text}</b><br>' +
+                             'Date: %{x}<br>' +
+                             'Movement: %{y:.2f}%<br>' +
+                             'Event: %{customdata[0]}<br>' +
+                             'Accuracy: %{customdata[1]:.1f}%<br>' +
+                             'Signal: %{customdata[2]}<extra></extra>',
+                customdata=list(zip(df_forecasts['event'], 
+                                  df_forecasts['historical_accuracy'],
+                                  df_forecasts['signal']))
             ))
             
-            # Add pivot points
+            # Add cumulative movement line
+            cumulative_change = df_forecasts['change_signed'].cumsum()
+            fig.add_trace(go.Scatter(
+                x=df_forecasts['date'],
+                y=cumulative_change,
+                mode='lines',
+                name='Cumulative Movement',
+                line=dict(color='#ff6b35', width=2, dash='dash'),
+                hovertemplate='Cumulative: %{y:.2f}%<extra></extra>'
+            ))
+            
+            # Add zero line
+            fig.add_hline(y=0, line_dash="solid", line_color="white", opacity=0.3, line_width=1)
+            
+            # Color-code background for positive/negative zones
+            fig.add_hrect(y0=0, y1=max(df_forecasts['change_signed'].max(), 5), 
+                         fillcolor="rgba(76, 175, 80, 0.1)", layer="below", line_width=0)
+            fig.add_hrect(y0=min(df_forecasts['change_signed'].min(), -5), y1=0, 
+                         fillcolor="rgba(244, 67, 54, 0.1)", layer="below", line_width=0)
+            
+            # Add pivot points with better visibility
             if 'pivot_points' in st.session_state:
                 pivot_points = st.session_state.pivot_points
                 pivot_dates = [pd.to_datetime(p.date) for p in pivot_points]
@@ -833,9 +892,11 @@ def main():
                     fig.add_trace(go.Scatter(
                         x=support_dates,
                         y=support_values,
-                        mode='markers',
+                        mode='markers+text',
                         name='Support Levels',
-                        marker=dict(color='#4caf50', size=12, symbol='triangle-up'),
+                        marker=dict(color='#4caf50', size=15, symbol='triangle-up', line=dict(width=2, color='white')),
+                        text=[f"Support<br>{v:+.1f}%" for v in support_values],
+                        textposition="bottom center",
                         hovertemplate='Support Level<br>Date: %{x}<br>Level: %{y:.2f}%<extra></extra>'
                     ))
                 
@@ -847,31 +908,32 @@ def main():
                     fig.add_trace(go.Scatter(
                         x=resistance_dates,
                         y=resistance_values,
-                        mode='markers',
+                        mode='markers+text',
                         name='Resistance Levels',
-                        marker=dict(color='#f44336', size=12, symbol='triangle-down'),
+                        marker=dict(color='#f44336', size=15, symbol='triangle-down', line=dict(width=2, color='white')),
+                        text=[f"Resistance<br>{v:+.1f}%" for v in resistance_values],
+                        textposition="top center",
                         hovertemplate='Resistance Level<br>Date: %{x}<br>Level: %{y:.2f}%<extra></extra>'
                     ))
             
-            # Add horizontal line at zero
-            fig.add_hline(y=0, line_dash="dash", line_color="white", opacity=0.5)
-            
-            # Add annotations for major events
-            major_events = df_forecasts[df_forecasts['change'] > 2]
-            for _, event in major_events.iterrows():
+            # Add annotations for major swing dates
+            major_swings = df_forecasts[df_forecasts['change'] > 2]
+            for _, swing in major_swings.iterrows():
                 fig.add_annotation(
-                    x=event['date'],
-                    y=event['change_signed'],
-                    text=f"{event['event'][:25]}...<br>{event['change_signed']:+.1f}%",
+                    x=swing['date'],
+                    y=swing['change_signed'],
+                    text=f"<b>Major Swing</b><br>{swing['change_signed']:+.1f}%<br>{swing['event'][:30]}...",
                     showarrow=True,
                     arrowhead=2,
-                    arrowsize=1,
-                    arrowwidth=2,
+                    arrowsize=1.5,
+                    arrowwidth=3,
                     arrowcolor="#ffd700",
                     font=dict(size=10, color="white"),
                     bgcolor="rgba(26, 26, 46, 0.9)",
                     bordercolor="#ffd700",
-                    borderwidth=1
+                    borderwidth=2,
+                    ax=0,
+                    ay=-40 if swing['change_signed'] > 0 else 40
                 )
             
             fig.update_layout(
@@ -968,6 +1030,10 @@ def main():
                 transit = transit_data['transit']
                 avg_impact = transit_data['total_impact'] / len(transit_data['forecasts'])
                 
+                # Get all dates for this transit
+                transit_dates = [f.date for f in transit_data['forecasts']]
+                date_range = f"{min(transit_dates)} to {max(transit_dates)}" if len(transit_dates) > 1 else transit_dates[0]
+                
                 # Calculate average sector impacts
                 avg_sector_impacts = {}
                 for sector, impacts in transit_data['sector_impacts'].items():
@@ -988,24 +1054,42 @@ def main():
                 st.markdown(f"""
                 <div class="transit-detail-card">
                     <div style="margin-bottom: 20px;">
-                        <h3 style="color: #ffd700; margin-bottom: 10px;">🌟 {transit_desc}</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="color: #ffd700; margin: 0;">🌟 {transit_desc}</h3>
+                            <div style="text-align: right;">
+                                <div style="color: #ff9800; font-weight: bold; font-size: 1.1rem;">📅 {date_range}</div>
+                                <div style="color: #b8b8b8; font-size: 0.9rem;">{len(transit_dates)} day{'s' if len(transit_dates) > 1 else ''} duration</div>
+                            </div>
+                        </div>
+                        
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 15px;">
                             <div>
-                                <div style="color: #ff9800; font-weight: bold;">Transit Details</div>
-                                <div style="font-size: 0.9rem;">Duration: {len(transit_data['forecasts'])} days</div>
-                                <div style="font-size: 0.9rem;">Avg Impact: {avg_impact:.1f}%</div>
-                                <div style="font-size: 0.9rem;">Element: {platform.zodiac_signs[transit.zodiac_sign].element}</div>
+                                <div style="color: #ff9800; font-weight: bold; margin-bottom: 8px;">📊 Transit Details</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Planet:</strong> {transit.planet}</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Sign:</strong> {platform.zodiac_signs[transit.zodiac_sign].name}</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Type:</strong> {transit.transit_type.title()}</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Avg Impact:</strong> <span style="color: {'#4caf50' if avg_impact > 0 else '#f44336'};">{avg_impact:+.1f}%</span></div>
                             </div>
                             <div>
-                                <div style="color: #ff9800; font-weight: bold;">Historical Performance</div>
-                                <div style="font-size: 0.9rem;">Accuracy: {transit.historical_accuracy:.1f}%</div>
-                                <div style="font-size: 0.9rem;">Strength: {transit.impact_strength}</div>
-                                <div style="font-size: 0.9rem;">Quality: {platform.zodiac_signs[transit.zodiac_sign].quality}</div>
+                                <div style="color: #ff9800; font-weight: bold; margin-bottom: 8px;">📈 Market Impact</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Accuracy:</strong> {transit.historical_accuracy:.1f}%</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Strength:</strong> {transit.impact_strength}</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Degree:</strong> {transit.degree:.1f}°</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Sectors:</strong> {len(avg_sector_impacts)} affected</div>
                             </div>
                             <div>
-                                <div style="color: #ff9800; font-weight: bold;">Market Influence</div>
-                                <div style="font-size: 0.9rem;">Degree: {transit.degree:.1f}°</div>
-                                <div style="font-size: 0.9rem;">Sectors Affected: {len(avg_sector_impacts)}</div>
+                                <div style="color: #ff9800; font-weight: bold; margin-bottom: 8px;">🌟 Astrological Data</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Element:</strong> {platform.zodiac_signs[transit.zodiac_sign].element}</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Quality:</strong> {platform.zodiac_signs[transit.zodiac_sign].quality}</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Aspect:</strong> {transit.aspect_type.title() if transit.aspect_type else 'N/A'}</div>
+                                <div style="font-size: 0.9rem;"><strong>Target:</strong> {transit.aspect_planet if transit.aspect_planet else 'N/A'}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="background-color: rgba(255, 215, 0, 0.1); padding: 12px; border-radius: 8px; border-left: 4px solid #ffd700;">
+                            <div style="color: #ffd700; font-weight: bold; margin-bottom: 8px;">📋 Daily Breakdown:</div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                {" ".join([f'<div style="background-color: rgba(255, 255, 255, 0.05); padding: 6px; border-radius: 4px;"><strong>{f.date}:</strong> <span style="color: {"#4caf50" if "+" in f.change else "#f44336"};">{f.change}%</span> - {f.signal.value}</div>' for f in transit_data['forecasts'][:8]])}
                             </div>
                         </div>
                     </div>

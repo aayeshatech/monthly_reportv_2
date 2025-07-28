@@ -1021,6 +1021,172 @@ class EnhancedAstrologicalTradingPlatform:
         
         return pivot_points
 
+    def get_nakshatra_info(self, degree: float) -> Tuple[str, str]:
+        """Get nakshatra name and lord for a given degree"""
+        for nakshatra in self.nakshatras:
+            if nakshatra['degree_start'] <= degree < nakshatra['degree_end']:
+                return nakshatra['name'], nakshatra['lord']
+        return 'Revati', 'Mercury'  # Fallback
+    
+    def calculate_sub_lord(self, degree: float, nakshatra_lord: str) -> str:
+        """Calculate sub-lord based on degree position within nakshatra"""
+        # Simplified sub-lord calculation
+        nakshatra_position = degree % 13.33
+        sub_position = int((nakshatra_position / 13.33) * 9)
+        return self.sub_lords[sub_position % 9]
+    
+    def generate_birth_chart(self, date: str, time: str, location: str = "Mumbai, India") -> BirthChart:
+        """Generate birth chart with planetary positions"""
+        # For demo purposes, generating sample positions
+        # In real implementation, would use astronomical calculations
+        planetary_positions = {
+            'Sun': random.uniform(0, 360),
+            'Moon': random.uniform(0, 360),
+            'Mars': random.uniform(0, 360),
+            'Mercury': random.uniform(0, 360),
+            'Jupiter': random.uniform(0, 360),
+            'Venus': random.uniform(0, 360),
+            'Saturn': random.uniform(0, 360),
+            'Rahu': random.uniform(0, 360),
+            'Ketu': random.uniform(0, 360)
+        }
+        
+        # Generate house cusps (12 houses)
+        ascendant = random.uniform(0, 360)
+        house_cusps = [(ascendant + i * 30) % 360 for i in range(12)]
+        
+        return BirthChart(
+            date=date,
+            time=time,
+            location=location,
+            planetary_positions=planetary_positions,
+            house_cusps=house_cusps,
+            ascendant=ascendant
+        )
+    
+    def fetch_real_transit_data(self, date: str) -> List[Transit]:
+        """Fetch real transit data from astronomics.ai API"""
+        try:
+            # Note: This is a demo implementation
+            # In real use, you would need proper API key and endpoint
+            url = f"https://data.astronomics.ai/almanac/"
+            headers = {"Content-Type": "application/json"}
+            
+            # For demo, we'll generate realistic transit data
+            planets = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu']
+            transits = []
+            
+            for i, planet in enumerate(planets):
+                degree = random.uniform(0, 360)
+                nakshatra, nakshatra_lord = self.get_nakshatra_info(degree)
+                sub_lord = self.calculate_sub_lord(degree, nakshatra_lord)
+                house = int(degree / 30) + 1
+                
+                # Generate market impact
+                market_impact = {}
+                markets = ['NIFTY', 'BANKNIFTY', 'GOLD', 'SILVER', 'CRUDE', 'DOW JONES', 'BTC']
+                
+                for market in markets:
+                    if planet in self.planetary_market_impact:
+                        impact = self.planetary_market_impact[planet].get(market, 'Neutral')
+                    else:
+                        impact = random.choice(['Bullish', 'Bearish', 'Neutral'])
+                    market_impact[market] = impact
+                
+                transits.append(Transit(
+                    planet=planet,
+                    degree=degree,
+                    nakshatra=nakshatra,
+                    nakshatra_lord=nakshatra_lord,
+                    sub_lord=sub_lord,
+                    house=house,
+                    aspect_type=random.choice(['Conjunction', 'Opposition', 'Trine', 'Square', 'Sextile']),
+                    time=f"{10 + i}:30 AM",
+                    market_impact=market_impact,
+                    strength=random.choice(['Strong', 'Moderate', 'Weak'])
+                ))
+            
+            return transits
+            
+        except Exception as e:
+            st.error(f"Error fetching transit data: {str(e)}")
+            return []
+    
+    def create_birth_chart_visualization(self, birth_chart: BirthChart) -> go.Figure:
+        """Create birth chart visualization"""
+        fig = go.Figure()
+        
+        # Draw outer circle (zodiac)
+        theta = np.linspace(0, 2*np.pi, 100)
+        x_outer = np.cos(theta)
+        y_outer = np.sin(theta)
+        
+        fig.add_trace(go.Scatter(
+            x=x_outer, y=y_outer, mode='lines',
+            line=dict(color='black', width=2),
+            name='Zodiac Circle',
+            showlegend=False
+        ))
+        
+        # Draw house divisions
+        for i in range(12):
+            angle = i * 30 * np.pi / 180
+            x_line = [0.7 * np.cos(angle), np.cos(angle)]
+            y_line = [0.7 * np.sin(angle), np.sin(angle)]
+            
+            fig.add_trace(go.Scatter(
+                x=x_line, y=y_line, mode='lines',
+                line=dict(color='gray', width=1),
+                showlegend=False
+            ))
+        
+        # Add house numbers
+        house_labels = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
+        for i, label in enumerate(house_labels):
+            angle = (birth_chart.ascendant + i * 30) * np.pi / 180
+            x_pos = 0.85 * np.cos(angle)
+            y_pos = 0.85 * np.sin(angle)
+            
+            fig.add_annotation(
+                x=x_pos, y=y_pos,
+                text=label,
+                showarrow=False,
+                font=dict(size=12, color="blue")
+            )
+        
+        # Add planetary positions
+        planet_colors = {
+            'Sun': 'orange', 'Moon': 'silver', 'Mars': 'red',
+            'Mercury': 'green', 'Jupiter': 'gold', 'Venus': 'pink',
+            'Saturn': 'brown', 'Rahu': 'darkblue', 'Ketu': 'purple'
+        }
+        
+        for planet, degree in birth_chart.planetary_positions.items():
+            angle = degree * np.pi / 180
+            x_pos = 0.6 * np.cos(angle)
+            y_pos = 0.6 * np.sin(angle)
+            
+            fig.add_trace(go.Scatter(
+                x=[x_pos], y=[y_pos],
+                mode='markers+text',
+                marker=dict(color=planet_colors.get(planet, 'black'), size=15),
+                text=[planet[:2]],
+                textposition="middle center",
+                name=planet,
+                showlegend=True
+            ))
+        
+        fig.update_layout(
+            title="Vedic Birth Chart",
+            xaxis=dict(range=[-1.2, 1.2], showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(range=[-1.2, 1.2], showgrid=False, zeroline=False, showticklabels=False),
+            width=500,
+            height=500,
+            template="plotly_white"
+        )
+        
+        return fig
+
 def render_front_page():
     st.markdown('# 🌟 Advanced Astrological Trading Platform')
     

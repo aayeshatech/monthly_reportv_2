@@ -18,115 +18,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-st.markdown("""
-<style>
-    .main-header {
-        text-align: center;
-        background: linear-gradient(45deg, #ffd700, #ffb347, #ff6b35);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-size: 3rem;
-        font-weight: bold;
-        margin-bottom: 1rem;
-    }
-    
-    .hero-section {
-        background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
-        padding: 2rem;
-        border-radius: 15px;
-        border: 2px solid #ffd700;
-        margin-bottom: 2rem;
-        text-align: center;
-    }
-    
-    .feature-card {
-        background: linear-gradient(135deg, #2d2d4a, #1a1a2e);
-        padding: 1.5rem;
-        border-radius: 12px;
-        border: 1px solid #ffd700;
-        text-align: center;
-        color: white;
-        margin-bottom: 15px;
-        transition: transform 0.3s ease;
-    }
-    
-    .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
-    }
-    
-    .stat-card {
-        background: linear-gradient(135deg, #1a1a2e, #16213e);
-        padding: 1rem;
-        border-radius: 10px;
-        border: 1px solid #ffd700;
-        text-align: center;
-        color: white;
-        margin-bottom: 10px;
-    }
-    
-    .astro-card {
-        background: linear-gradient(135deg, #2d2d4a, #1a1a2e);
-        padding: 1.2rem;
-        border-radius: 12px;
-        border-left: 4px solid #ffd700;
-        margin-bottom: 1rem;
-        color: white;
-    }
-    
-    .bullish-card {
-        border-left-color: #4caf50 !important;
-        background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(26, 26, 46, 0.9));
-    }
-    
-    .bearish-card {
-        border-left-color: #f44336 !important;
-        background: linear-gradient(135deg, rgba(244, 67, 54, 0.1), rgba(26, 26, 46, 0.9));
-    }
-    
-    .neutral-card {
-        border-left-color: #ff9800 !important;
-        background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(26, 26, 46, 0.9));
-    }
-    
-    .transit-forecast-card {
-        background: linear-gradient(135deg, #1e1e3f, #2d2d4a);
-        border: 2px solid #ffd700;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .transit-forecast-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #ffd700, #ff6b35, #ffd700);
-        animation: shimmer 2s infinite;
-    }
-    
-    @keyframes shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-    }
-    
-    .symbol-header {
-        background: linear-gradient(135deg, #1a1a2e, #16213e);
-        padding: 1rem;
-        border-radius: 10px;
-        border: 2px solid #ffd700;
-        text-align: center;
-        margin-bottom: 1rem;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 class Sentiment(Enum):
     BULLISH = "bullish"
     BEARISH = "bearish"
@@ -287,7 +178,7 @@ class EnhancedAstrologicalTradingPlatform:
     def generate_symbol_specific_transits(self, symbol: str, year: int, month: int) -> List[Dict]:
         """Generate symbol-specific planetary transits"""
         transits = []
-        ruling_planets = self.symbol_planetary_rulers.get(symbol, ['jupiter', 'saturn'])
+        ruling_planets = self.symbol_planetary_rulers.get(symbol, ['jupiter', 'saturn'])  # Default to Jupiter/Saturn
         
         # Get month-specific data or generate based on symbol
         base_transits = [
@@ -511,30 +402,18 @@ class EnhancedAstrologicalTradingPlatform:
         return pivot_points
 
 def render_front_page():
-    st.markdown('<h1 class="main-header">🌟 Advanced Astrological Trading Platform</h1>', unsafe_allow_html=True)
+    st.markdown('# 🌟 Advanced Astrological Trading Platform')
     
-    # Hero Section
-    st.markdown("""
-    <div class="hero-section">
-        <h2 style="color: #ffd700; margin-bottom: 1rem;">🚀 Professional Market Analysis with Planetary Intelligence</h2>
-        <p style="color: #b8b8b8; font-size: 1.2rem; margin-bottom: 1.5rem;">
-            Harness the power of celestial movements for precise market predictions and trading signals
-        </p>
-        <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-            <div style="background: rgba(255, 215, 0, 0.1); padding: 10px 20px; border-radius: 25px; border: 1px solid #ffd700;">
-                ⭐ 85%+ Accuracy Rate
-            </div>
-            <div style="background: rgba(255, 215, 0, 0.1); padding: 10px 20px; border-radius: 25px; border: 1px solid #ffd700;">
-                🌍 Global Markets Coverage
-            </div>
-            <div style="background: rgba(255, 215, 0, 0.1); padding: 10px 20px; border-radius: 25px; border: 1px solid #ffd700;">
-                📊 Real-time Analysis
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Hero Section using native Streamlit
+    st.info("""
+    ## 🚀 Professional Market Analysis with Planetary Intelligence
     
-    # Feature Cards
+    Harness the power of celestial movements for precise market predictions and trading signals
+    
+    ⭐ 85%+ Accuracy Rate | 🌍 Global Markets Coverage | 📊 Real-time Analysis
+    """)
+    
+    # Feature Cards using columns
     col1, col2, col3, col4 = st.columns(4)
     
     features = [
@@ -546,22 +425,13 @@ def render_front_page():
     
     for i, (icon, title, desc) in enumerate(features):
         with [col1, col2, col3, col4][i]:
-            st.markdown(f"""
-            <div class="feature-card">
-                <div style="font-size: 2.5rem; margin-bottom: 15px;">{icon}</div>
-                <h3 style="color: #ffd700; margin-bottom: 10px;">{title}</h3>
-                <p style="font-size: 0.9rem;">{desc}</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"### {icon} {title}")
+            st.markdown(desc)
     
     # Current Market Status
     current_time = datetime.datetime.now()
-    st.markdown(f"""
-    <div style="text-align: center; margin: 2rem 0; padding: 1rem; background: linear-gradient(135deg, #1a1a2e, #16213e); border-radius: 10px; border: 1px solid #ffd700;">
-        <h3 style="color: #ffd700;">🕐 Current Market Time: {current_time.strftime("%Y-%m-%d %H:%M:%S IST")}</h3>
-        <p style="color: #b8b8b8;">Ready to analyze celestial influences on your trading decisions</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.success(f"🕐 Current Market Time: {current_time.strftime('%Y-%m-%d %H:%M:%S IST')}")
+    st.info("Ready to analyze celestial influences on your trading decisions")
 
 def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year: int, platform):
     """Render astro calendar in the requested format"""
@@ -571,7 +441,7 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
     # Filter significant transits only
     significant_forecasts = [f for f in forecasts if abs(float(f.change.replace('+', '').replace('-', ''))) > 1.0][:9]
     
-    # Create 3x3 grid
+    # Create 3x3 grid using native Streamlit
     for row in range(3):
         cols = st.columns(3)
         for col in range(3):
@@ -580,38 +450,24 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
                 forecast = significant_forecasts[index]
                 transit = forecast.detailed_transit
                 
-                # Determine card class based on sentiment
-                card_class = {
-                    Sentiment.BULLISH: "bullish-card",
-                    Sentiment.BEARISH: "bearish-card",
-                    Sentiment.NEUTRAL: "neutral-card"
-                }.get(forecast.sentiment, "neutral-card")
-                
-                # Determine impact label and color
-                if forecast.sentiment == Sentiment.BULLISH:
-                    impact_label = "MODERATE BULLISH" if "moderate" in forecast.impact.lower() else "STRONG BULLISH"
-                    impact_color = "#4caf50"
-                elif forecast.sentiment == Sentiment.BEARISH:
-                    impact_label = "MODERATE BEARISH" if "moderate" in forecast.impact.lower() else "STRONG BEARISH"
-                    impact_color = "#f44336"
-                else:
-                    impact_label = "MODERATE NEUTRAL"
-                    impact_color = "#ff9800"
-                
                 with cols[col]:
-                    # Create simplified display using native Streamlit components
-                    with st.container():
-                        # Header row
-                        col_date, col_label = st.columns([2, 1])
-                        with col_date:
-                            st.markdown(f"**📅 {forecast.date.replace('2025-', '')}**")
-                        with col_label:
-                            if forecast.sentiment == Sentiment.BULLISH:
-                                st.success(impact_label)
-                            elif forecast.sentiment == Sentiment.BEARISH:
-                                st.error(impact_label)
+                    # Create card using expander
+                    card_title = f"{forecast.date.replace('2025-', '')} - {forecast.change}%"
+                    
+                    with st.expander(card_title, expanded=True):
+                        # Determine impact label and display color
+                        if forecast.sentiment == Sentiment.BULLISH:
+                            if "strong" in forecast.impact.lower():
+                                st.success("STRONG BULLISH")
                             else:
-                                st.warning(impact_label)
+                                st.success("MODERATE BULLISH")
+                        elif forecast.sentiment == Sentiment.BEARISH:
+                            if "strong" in forecast.impact.lower():
+                                st.error("STRONG BEARISH")
+                            else:
+                                st.error("MODERATE BEARISH")
+                        else:
+                            st.warning("MODERATE NEUTRAL")
                         
                         # Main content
                         st.markdown(f"**{transit.planet} {transit.aspect_type} {transit.aspect_planet if transit.aspect_planet else ''}**")
@@ -626,8 +482,6 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
                             st.error(f"Expected Change: {forecast.change}%")
                         else:
                             st.info(f"Expected Change: {forecast.change}%")
-                        
-                        st.markdown("---")
 
 def main():
     if 'platform' not in st.session_state:
@@ -707,20 +561,15 @@ def main():
             strong_transits = len([f for f in forecasts if 'Strong' in f.impact])
             
             stats = [
-                (bullish_count, "Bullish Days", "#4caf50"),
-                (bearish_count, "Bearish Days", "#f44336"),
-                (neutral_count, "Neutral Days", "#ff9800"),
-                (strong_transits, "Strong Transits", "#e91e63")
+                (bullish_count, "Bullish Days", "🟢"),
+                (bearish_count, "Bearish Days", "🔴"),
+                (neutral_count, "Neutral Days", "🟡"),
+                (strong_transits, "Strong Transits", "⭐")
             ]
             
-            for i, (count, label, color) in enumerate(stats):
+            for i, (count, label, emoji) in enumerate(stats):
                 with [col1, col2, col3, col4][i]:
-                    st.markdown(f"""
-                    <div class="stat-card">
-                        <h3 style="color: {color};">{count}</h3>
-                        <p>{label}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.metric(label=f"{emoji} {label}", value=count)
             
             # Render Astro Calendar Grid
             render_astro_calendar_grid(forecasts, month_name, st.session_state.year, platform)
@@ -731,28 +580,21 @@ def main():
                 if abs(float(forecast.change.replace('+', '').replace('-', ''))) > 0.5:
                     transit = forecast.detailed_transit
                     
-                    sentiment_emoji = "📈" if forecast.sentiment == Sentiment.BULLISH else "📉" if forecast.sentiment == Sentiment.BEARISH else "➡️"
-                    signal_emoji = "🟢" if forecast.signal == SignalType.LONG else "🔴" if forecast.signal == SignalType.SHORT else "🟡"
-                    
-                    st.markdown(f"""
-                    <div class="astro-card {{'bullish-card' if forecast.sentiment == Sentiment.BULLISH else 'bearish-card' if forecast.sentiment == Sentiment.BEARISH else 'neutral-card'}}">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <h4 style="margin: 0; color: #ffd700;">📅 {forecast.date} (Day {forecast.day})</h4>
-                            <div style="display: flex; gap: 10px;">
-                                <span>{signal_emoji} {forecast.signal.value}</span>
-                                <span style="color: #ffd700; font-weight: bold;">{forecast.change}%</span>
-                            </div>
-                        </div>
+                    # Create expandable sections for each day
+                    with st.expander(f"📅 {forecast.date} (Day {forecast.day}) - {forecast.signal.value} {forecast.change}%"):
+                        st.markdown(f"**{forecast.event}**")
                         
-                        <h5 style="margin: 0.5rem 0; color: white;">{forecast.event}</h5>
-                        <p style="margin: 0.5rem 0; color: #b8b8b8; font-style: italic;">
-                            {transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name} • {transit.aspect_type.title()} • 
-                            Accuracy: {transit.historical_accuracy:.1f}%
-                        </p>
+                        zodiac_name = platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()
+                        st.markdown(f"_{transit.planet} in {zodiac_name} • {transit.aspect_type.title()} • Accuracy: {transit.historical_accuracy:.1f}%_")
                         
-                        {f'<p style="margin: 0; color: #ffd700;"><strong>Sector Impacts:</strong> {" | ".join([f"{k.upper()}: {v:+.1f}%" for k, v in forecast.sector_impact.items()])}</p>' if forecast.sector_impact else ''}
-                    </div>
-                    """, unsafe_allow_html=True)
+                        # Display sector impacts
+                        if forecast.sector_impact:
+                            st.markdown("**Sector Impacts:**")
+                            for sector, impact in forecast.sector_impact.items():
+                                if impact > 0:
+                                    st.success(f"{sector.upper()}: +{impact:.1f}%")
+                                else:
+                                    st.error(f"{sector.upper()}: {impact:.1f}%")
         
         with tab2:
             st.markdown(f"## 📊 {st.session_state.symbol} Analysis")
@@ -769,34 +611,23 @@ def main():
             high_accuracy_transits = len([f for f in forecasts if f.detailed_transit.historical_accuracy > 75])
             
             stats = [
-                (f"+{total_bullish_impact:.1f}%", "Total Bullish Impact", "#4caf50"),
-                (f"-{total_bearish_impact:.1f}%", "Total Bearish Impact", "#f44336"),
-                (f"{avg_daily_change:.1f}%", "Avg Daily Impact", "#ff9800"),
-                (high_accuracy_transits, "High Accuracy Transits", "#e91e63")
+                (f"+{total_bullish_impact:.1f}%", "Total Bullish Impact", "🟢"),
+                (f"-{total_bearish_impact:.1f}%", "Total Bearish Impact", "🔴"),
+                (f"{avg_daily_change:.1f}%", "Avg Daily Impact", "🟡"),
+                (high_accuracy_transits, "High Accuracy Transits", "⭐")
             ]
             
-            for i, (value, label, color) in enumerate(stats):
+            for i, (value, label, emoji) in enumerate(stats):
                 with [col1, col2, col3, col4][i]:
-                    st.markdown(f"""
-                    <div class="stat-card">
-                        <h3 style="color: {color};">{value}</h3>
-                        <p>{label}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.metric(label=f"{emoji} {label}", value=value)
             
             # Symbol-specific ruling planets info
-            ruling_planets = platform.symbol_planetary_rulers.get(st.session_state.symbol, ['jupiter'])
-            st.markdown(f"""
-            <div class="astro-card">
-                <h4 style="color: #ffd700; margin: 0 0 0.5rem 0;">🪐 Ruling Planetary Influences for {st.session_state.symbol}</h4>
-                <p style="color: white; margin: 0;">
-                    <strong>Primary Ruling Planets:</strong> {', '.join([p.title() for p in ruling_planets])}
-                </p>
-                <p style="color: #b8b8b8; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
-                    These planets have the strongest influence on {st.session_state.symbol}'s price movements according to astrological analysis.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+            ruling_planets = platform.symbol_planetary_rulers.get(st.session_state.symbol, ['jupiter', 'saturn'])
+            
+            # Use native Streamlit components instead of HTML
+            st.info(f"🪐 **Ruling Planetary Influences for {st.session_state.symbol}**")
+            st.markdown(f"**Primary Ruling Planets:** {', '.join([p.title() for p in ruling_planets])}")
+            st.markdown(f"_These planets have the strongest influence on {st.session_state.symbol}'s price movements according to astrological analysis._")
             
             # Monthly forecast breakdown
             st.markdown("### 📈 Symbol-Specific Monthly Forecast")
@@ -814,36 +645,27 @@ def main():
                 for i, forecast in enumerate(week_forecasts):
                     if i < len(weekly_cols):
                         with weekly_cols[i]:
-                            sentiment_color = {
-                                Sentiment.BULLISH: "#4caf50",
-                                Sentiment.BEARISH: "#f44336",
-                                Sentiment.NEUTRAL: "#ff9800"
-                            }.get(forecast.sentiment, "#ff9800")
+                            # Use native Streamlit components
+                            st.markdown(f"**{forecast.date.split('-')[2]}/{forecast.date.split('-')[1]}**")
                             
+                            # Display change with appropriate color
+                            if forecast.sentiment == Sentiment.BULLISH:
+                                st.success(f"{forecast.change}%")
+                            elif forecast.sentiment == Sentiment.BEARISH:
+                                st.error(f"{forecast.change}%")
+                            else:
+                                st.info(f"{forecast.change}%")
+                            
+                            # Signal
                             signal_text = {
                                 SignalType.LONG: "🟢 BUY",
                                 SignalType.SHORT: "🔴 SELL", 
                                 SignalType.HOLD: "🟡 HOLD"
                             }.get(forecast.signal, "🟡 HOLD")
                             
-                            st.markdown(f"""
-                            <div style="background: linear-gradient(135deg, {sentiment_color}15, #1a1a2e); 
-                                        border: 1px solid {sentiment_color}; border-radius: 8px; padding: 0.8rem; 
-                                        text-align: center; margin-bottom: 0.5rem;">
-                                <div style="color: #ffd700; font-weight: bold; margin-bottom: 0.3rem;">
-                                    {forecast.date.split('-')[2]}/{forecast.date.split('-')[1]}
-                                </div>
-                                <div style="color: {sentiment_color}; font-weight: bold; font-size: 1.1rem; margin-bottom: 0.3rem;">
-                                    {forecast.change}%
-                                </div>
-                                <div style="color: white; font-size: 0.8rem; margin-bottom: 0.3rem;">
-                                    {signal_text}
-                                </div>
-                                <div style="color: #b8b8b8; font-size: 0.7rem;">
-                                    {forecast.detailed_transit.planet} Transit
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
+                            st.markdown(f"**{signal_text}**")
+                            st.markdown(f"_{forecast.detailed_transit.planet} Transit_")
+                            st.markdown("---")
         
         with tab3:
             st.markdown(f"## 📈 {st.session_state.symbol} Astrological Movement Graph")
@@ -1056,27 +878,32 @@ def main():
             st.markdown(f"### {st.session_state.symbol} - {platform.month_names[st.session_state.month]} {st.session_state.year}")
             
             # Symbol-specific ruling planet analysis
-            ruling_planets = platform.symbol_planetary_rulers.get(st.session_state.symbol, ['jupiter'])
+            ruling_planets = platform.symbol_planetary_rulers.get(st.session_state.symbol, ['jupiter', 'saturn'])
             
-            st.markdown(f"""
-            <div class="astro-card bullish-card">
-                <h4 style="color: #ffd700; margin: 0 0 0.5rem 0;">🪐 Symbol-Specific Planetary Rulership</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
-                    <div>
-                        <strong style="color: white;">Primary Ruling Planets:</strong><br>
-                        <span style="color: #4caf50;">{', '.join([p.title() for p in ruling_planets])}</span>
-                    </div>
-                    <div>
-                        <strong style="color: white;">Symbol Type:</strong><br>
-                        <span style="color: #ffd700;">{st.session_state.analysis_type.title()}</span>
-                    </div>
-                    <div>
-                        <strong style="color: white;">Enhanced Sensitivity:</strong><br>
-                        <span style="color: #ff9800;">50% stronger impact from ruling planets</span>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            # Use expandable section for better organization
+            with st.expander("🪐 Symbol-Specific Planetary Rulership", expanded=True):
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric(
+                        label="Primary Ruling Planets",
+                        value=', '.join([p.title() for p in ruling_planets]),
+                        delta="Enhanced Analysis"
+                    )
+                
+                with col2:
+                    st.metric(
+                        label="Symbol Type",
+                        value=st.session_state.analysis_type.title(),
+                        delta="Specific Analysis"
+                    )
+                
+                with col3:
+                    st.metric(
+                        label="Enhanced Sensitivity",
+                        value="50% Stronger",
+                        delta="From Ruling Planets"
+                    )
             
             # Get unique transits for the month with enhanced analysis
             unique_transits = {}
@@ -1106,16 +933,12 @@ def main():
                 reverse=True
             )
             
-            st.markdown("### 🌟 Major Planetary Transits Affecting Your Symbol")
+            st.markdown(f"### 🌟 Major Planetary Transits - {month_name} {st.session_state.year}")
             
-            for transit_key, transit_data in sorted_transits[:6]:
+            for transit_key, transit_data in sorted_transits[:6]:  # Show top 6 major transits
                 transit = transit_data['transit']
                 avg_impact = transit_data['total_impact'] / len(transit_data['forecasts'])
                 is_ruling = transit_data['is_ruling_planet']
-                
-                # Enhanced card styling for ruling planets
-                card_class = "bullish-card" if is_ruling else "astro-card"
-                ruling_indicator = "👑 RULING PLANET" if is_ruling else ""
                 
                 # Get all dates for this transit
                 transit_dates = [f.date for f in transit_data['forecasts']]
@@ -1146,71 +969,67 @@ def main():
                 if is_ruling:
                     impact_multiplier *= 1.5
                 
-                st.markdown(f"""
-                <div class="{card_class}" style="margin-bottom: 2rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h3 style="color: #ffd700; margin: 0;">🌟 {transit_desc}</h3>
-                        {f'<span style="background: linear-gradient(45deg, #ffd700, #ff6b35); padding: 0.3rem 0.8rem; border-radius: 15px; color: black; font-weight: bold; font-size: 0.8rem;">{ruling_indicator}</span>' if is_ruling else ''}
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                        <div>
-                            <strong style="color: #ffd700;">Duration:</strong><br>
-                            <span style="color: white;">{date_range}</span><br>
-                            <span style="color: #b8b8b8;">({len(transit_dates)} day{'s' if len(transit_dates) > 1 else ''})</span>
-                        </div>
-                        <div>
-                            <strong style="color: #ffd700;">Average Impact:</strong><br>
-                            <span style="color: {'#4caf50' if avg_impact > 0 else '#f44336'}; font-size: 1.2rem; font-weight: bold;">
-                                {avg_impact * impact_multiplier:+.1f}%
-                            </span>
-                        </div>
-                        <div>
-                            <strong style="color: #ffd700;">Accuracy:</strong><br>
-                            <span style="color: white;">{transit.historical_accuracy:.1f}%</span><br>
-                            <span style="color: #b8b8b8;">{transit.impact_strength} Impact</span>
-                        </div>
-                        <div>
-                            <strong style="color: #ffd700;">Astrological Data:</strong><br>
-                            <span style="color: white;">{platform.zodiac_signs[transit.zodiac_sign].element} • {platform.zodiac_signs[transit.zodiac_sign].quality}</span><br>
-                            <span style="color: #b8b8b8;">{transit.degree:.1f}°</span>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                # Display transit info using native Streamlit components
+                st.markdown(f"### 🌟 {transit_desc}")
+                if is_ruling:
+                    st.success("👑 RULING PLANET - Enhanced Impact on Your Symbol")
+                
+                st.markdown(f"**📅 Duration:** {date_range} ({len(transit_dates)} day{'s' if len(transit_dates) > 1 else ''})")
+                
+                # Create columns for key metrics
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    st.metric(
+                        label="⏱️ Duration",
+                        value=f"{len(transit_dates)} day{'s' if len(transit_dates) > 1 else ''}",
+                        delta=date_range
+                    )
+                
+                with col2:
+                    impact_value = avg_impact * impact_multiplier
+                    st.metric(
+                        label="📈 Average Impact",
+                        value=f"{impact_value:+.1f}%",
+                        delta="Strong" if is_ruling else "Normal"
+                    )
+                
+                with col3:
+                    st.metric(
+                        label="🎯 Accuracy",
+                        value=f"{transit.historical_accuracy:.1f}%",
+                        delta=f"{transit.impact_strength} Impact"
+                    )
+                
+                with col4:
+                    zodiac_info = platform.zodiac_signs[transit.zodiac_sign] if transit.zodiac_sign in platform.zodiac_signs else None
+                    element = zodiac_info.element if zodiac_info else 'Unknown'
+                    quality = zodiac_info.quality if zodiac_info else 'Unknown'
+                    st.metric(
+                        label="🌟 Astrological",
+                        value=f"{element}",
+                        delta=f"{quality} • {transit.degree:.1f}°"
+                    )
                 
                 # Daily breakdown with enhanced visualization
                 if len(transit_data['forecasts']) > 1:
                     st.markdown("**📋 Daily Progression:**")
                     
-                    daily_cols = st.columns(min(7, len(transit_data['forecasts'])))
+                    # Use tabs for better organization
+                    daily_tabs = st.tabs([f"Day {i+1}" for i in range(min(7, len(transit_data['forecasts'])))])
+                    
                     for i, f in enumerate(transit_data['forecasts'][:7]):
-                        with daily_cols[i]:
+                        with daily_tabs[i]:
                             change_val = float(f.change.replace('+', '').replace('-', ''))
                             if is_ruling:
                                 change_val *= 1.5
                             
-                            sentiment_color = {
-                                Sentiment.BULLISH: "#4caf50",
-                                Sentiment.BEARISH: "#f44336", 
-                                Sentiment.NEUTRAL: "#ff9800"
-                            }.get(f.sentiment, "#ff9800")
-                            
-                            st.markdown(f"""
-                            <div style="background: linear-gradient(135deg, {sentiment_color}20, #1a1a2e);
-                                        border: 1px solid {sentiment_color}; border-radius: 8px; padding: 0.8rem;
-                                        text-align: center; margin-bottom: 0.5rem;">
-                                <div style="color: #ffd700; font-weight: bold; margin-bottom: 0.3rem;">
-                                    {f.date.split('-')[2]}/{f.date.split('-')[1]}
-                                </div>
-                                <div style="color: {sentiment_color}; font-weight: bold; font-size: 1.1rem;">
-                                    {change_val:+.1f}%
-                                </div>
-                                <div style="color: white; font-size: 0.8rem;">
-                                    {f.signal.value}
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
+                            # Use metric for clean display
+                            st.metric(
+                                label=f"{f.date.split('-')[2]}/{f.date.split('-')[1]}",
+                                value=f"{change_val:+.1f}%",
+                                delta=f.signal.value
+                            )
                 
                 # Enhanced sector analysis for symbol
                 if avg_sector_impacts:
@@ -1240,27 +1059,19 @@ def main():
                     sector_cols = st.columns(min(4, len(sector_analysis)))
                     for i, sector_data in enumerate(sector_analysis[:4]):
                         with sector_cols[i]:
-                            impact_color = "#4caf50" if sector_data['impact'] > 0 else "#f44336"
-                            relevance_color = "#ffd700" if sector_data['relevance'] == 'PRIMARY' else "#b8b8b8"
+                            # Use clean metric display
+                            delta_color = "normal"
+                            if "BUY" in sector_data['recommendation']:
+                                delta_color = "normal"
+                            elif "SELL" in sector_data['recommendation']:
+                                delta_color = "inverse"
                             
-                            st.markdown(f"""
-                            <div style="background: linear-gradient(135deg, {impact_color}15, #1a1a2e);
-                                        border: 2px solid {impact_color}; border-radius: 10px; padding: 1rem;
-                                        text-align: center; margin-bottom: 1rem;">
-                                <h4 style="color: {relevance_color}; margin: 0 0 0.5rem 0;">
-                                    {sector_data['sector'].upper()}
-                                </h4>
-                                <div style="color: {impact_color}; font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">
-                                    {sector_data['impact']:+.2f}%
-                                </div>
-                                <div style="color: white; font-weight: bold; margin-bottom: 0.3rem;">
-                                    {sector_data['recommendation']}
-                                </div>
-                                <div style="color: {relevance_color}; font-size: 0.8rem;">
-                                    {sector_data['relevance']} RELEVANCE
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
+                            st.metric(
+                                label=f"📊 {sector_data['sector'].upper()}",
+                                value=f"{sector_data['impact']:+.2f}%",
+                                delta=f"{sector_data['recommendation']} ({sector_data['relevance']})",
+                                delta_color=delta_color
+                            )
                 
                 st.markdown("---")
         

@@ -64,70 +64,6 @@ st.markdown("""
         color: white;
         margin-bottom: 10px;
     }
-    
-    .forecast-card {
-        background: linear-gradient(135deg, #2d2d4a, #1a1a2e);
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 4px solid #ffd700;
-        margin: 0.5rem 0;
-        color: white;
-    }
-    
-    .planet-card {
-        background: linear-gradient(135deg, #16213e, #0c0c0c);
-        padding: 1rem;
-        border-radius: 10px;
-        border: 1px solid #ffd700;
-        text-align: center;
-        color: white;
-        margin-bottom: 10px;
-    }
-    
-    .transit-detail-card {
-        background: linear-gradient(135deg, #2a1810, #3d2817);
-        padding: 1.5rem;
-        border-radius: 12px;
-        border-left: 5px solid #ff9800;
-        margin: 1rem 0;
-        color: white;
-    }
-    
-    .sector-impact-card {
-        background: linear-gradient(135deg, #1a2332, #2d3748);
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 4px solid #4caf50;
-        margin: 0.5rem 0;
-        color: white;
-    }
-    
-    .historical-card {
-        background: linear-gradient(135deg, #2a1810, #3d2817);
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 4px solid #ff9800;
-        margin: 0.5rem 0;
-        color: white;
-    }
-    
-    .pivot-card {
-        background: linear-gradient(135deg, #4a2d4a, #2e1a2e);
-        padding: 1rem;
-        border-radius: 10px;
-        border: 1px solid #e91e63;
-        text-align: center;
-        color: white;
-        margin-bottom: 10px;
-    }
-    
-    .bullish { color: #4caf50; font-weight: bold; }
-    .bearish { color: #f44336; font-weight: bold; }
-    .neutral { color: #ff9800; font-weight: bold; }
-    .long-signal { background-color: #4caf50; color: white; padding: 5px 10px; border-radius: 5px; }
-    .short-signal { background-color: #f44336; color: white; padding: 5px 10px; border-radius: 5px; }
-    .hold-signal { background-color: #ff9800; color: white; padding: 5px 10px; border-radius: 5px; }
-    .retro-indicator { background-color: #ff4444; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -569,7 +505,7 @@ def main():
     with col2:
         month_options = {i: platform.month_names[i] for i in range(12)}
         selected_month = st.selectbox("📅 Month", options=list(month_options.keys()), 
-                                     format_func=lambda x: month_options[x], index=7)
+                                     format_func=lambda x: month_options[x], index=6)  # Default to July (index 6)
     
     time_zone = st.sidebar.selectbox("🌍 Time Zone", ["IST", "EST", "GMT", "JST"])
     
@@ -596,6 +532,9 @@ def main():
             # Monthly Overview
             forecasts = st.session_state.report
             month_name = platform.month_names[st.session_state.month]
+            
+            # Debug info
+            st.sidebar.write(f"Debug: {len(forecasts)} forecasts generated for {month_name}")
             
             col1, col2, col3, col4 = st.columns(4)
             
@@ -641,65 +580,38 @@ def main():
             
             for forecast in forecasts:
                 if abs(float(forecast.change.replace('+', '').replace('-', ''))) > 1.0:  # Show significant events
-                    signal_class = "long-signal" if forecast.signal == SignalType.LONG else "short-signal" if forecast.signal == SignalType.SHORT else "hold-signal"
-                    sentiment_class = forecast.sentiment.value
+                    signal_class = "🟢 LONG" if forecast.signal == SignalType.LONG else "🔴 SHORT" if forecast.signal == SignalType.SHORT else "🟡 HOLD"
+                    sentiment_color = "🟢" if forecast.sentiment == Sentiment.BULLISH else "🔴" if forecast.sentiment == Sentiment.BEARISH else "🟡"
                     
                     transit = forecast.detailed_transit
                     
                     col1, col2 = st.columns([3, 1])
                     
                     with col1:
-                        # Format sector impacts properly
-                        sector_impacts_text = ""
+                        # Create simple text display instead of complex HTML
+                        st.markdown(f"**📅 {forecast.date}** | {signal_class}")
+                        st.markdown(f"**{forecast.event}**")
+                        st.markdown(f"_{transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name} • {transit.aspect_type.title()} {transit.aspect_planet}_")
+                        st.markdown(f"{sentiment_color} **{forecast.impact}** | Expected Change: **{forecast.change}%**")
+                        
+                        # Display sector impacts
                         if forecast.sector_impact:
-                            sector_list = []
+                            sector_text = "**Sector Impacts:** "
+                            sector_parts = []
                             for sector, impact in forecast.sector_impact.items():
-                                color = "#4caf50" if impact > 0 else "#f44336"
-                                sector_list.append(f'<span style="color: {color};">{sector.upper()}: {impact:+.1f}%</span>')
-                            sector_impacts_text = f"""
-                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #444;">
-                                <div style="font-size: 0.9rem; color: #ffd700; margin-bottom: 5px;">Sector Impacts:</div>
-                                <div style="font-size: 0.9rem;">{" | ".join(sector_list)}</div>
-                            </div>
-                            """
+                                emoji = "📈" if impact > 0 else "📉"
+                                sector_parts.append(f"{emoji} {sector.upper()}: {impact:+.1f}%")
+                            st.markdown(sector_text + " | ".join(sector_parts))
                         
-                        retro_indicator = ""
-                        if "retrograde" in forecast.event.lower():
-                            retro_indicator = '<span class="retro-indicator">RETRO</span> '
-                        
-                        st.markdown(f"""
-                        <div class="forecast-card">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <div style="color: #ffd700; font-weight: bold; font-size: 1.1rem;">{forecast.date}</div>
-                                <div>
-                                    {retro_indicator}
-                                    <span class="{signal_class}">{forecast.signal.value}</span>
-                                </div>
-                            </div>
-                            <div style="margin-bottom: 8px; font-size: 1.1rem; color: #fff;">
-                                {forecast.event}
-                            </div>
-                            <div style="margin-bottom: 8px; font-size: 0.9rem; color: #b8b8b8;">
-                                {transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name} • {transit.aspect_type.title()} {transit.aspect_planet}
-                            </div>
-                            <div class="{sentiment_class}" style="margin-bottom: 10px;">{forecast.impact}</div>
-                            <div style="color: #b8b8b8;">Expected Change: <span style="color: {'#4caf50' if '+' in forecast.change else '#f44336'}; font-weight: bold;">{forecast.change}%</span></div>
-                            {sector_impacts_text}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        st.markdown("---")
                     
                     with col2:
-                        st.markdown(f"""
-                        <div class="historical-card">
-                            <div style="color: #ff9800; font-weight: bold; margin-bottom: 8px;">📊 Historical Data</div>
-                            <div style="font-size: 0.9rem; margin-bottom: 4px;">Impact: {transit.impact_strength}</div>
-                            <div style="font-size: 0.9rem; margin-bottom: 4px;">Accuracy: {transit.historical_accuracy:.1f}%</div>
-                            <div style="font-size: 0.9rem; margin-bottom: 4px;">Degree: {transit.degree:.1f}°</div>
-                            <div style="font-size: 0.8rem; color: #ffd700;">
-                                {platform.zodiac_signs[transit.zodiac_sign].element} • {platform.zodiac_signs[transit.zodiac_sign].quality}
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        st.markdown("**📊 Analysis**")
+                        st.markdown(f"Impact: {transit.impact_strength}")
+                        st.markdown(f"Accuracy: {transit.historical_accuracy:.1f}%") 
+                        st.markdown(f"Degree: {transit.degree:.1f}°")
+                        st.markdown(f"Element: {platform.zodiac_signs[transit.zodiac_sign].element}")
+                        st.markdown("---")
         
         with tab2:
             st.markdown("### 📊 Stock Analysis")
@@ -757,84 +669,37 @@ def main():
             for forecast in forecasts:
                 transit = forecast.detailed_transit
                 
-                # Determine row background color based on impact strength
-                if abs(float(forecast.change.replace('+', '').replace('-', ''))) > 2:
-                    row_style = "border-left: 5px solid #ffd700;"
-                elif abs(float(forecast.change.replace('+', '').replace('-', ''))) > 1:
-                    row_style = "border-left: 3px solid #ff9800;"
-                else:
-                    row_style = "border-left: 2px solid #666;"
-                
                 # Create compact daily view
                 change_value = float(forecast.change.replace('+', '').replace('-', ''))
-                change_color = "#4caf50" if '+' in forecast.change else "#f44336" if '-' in forecast.change else "#ff9800"
+                signal_emoji = "🟢" if forecast.signal == SignalType.LONG else "🔴" if forecast.signal == SignalType.SHORT else "🟡"
+                sentiment_emoji = "📈" if forecast.sentiment == Sentiment.BULLISH else "📉" if forecast.sentiment == Sentiment.BEARISH else "➡️"
                 
                 col1, col2 = st.columns([3, 1])
                 
                 with col1:
-                    # Create sector impacts text separately to avoid f-string issues
-                    sector_impacts_html = ""
-                    if forecast.sector_impact:
-                        sector_spans = []
-                        for sector, impact in forecast.sector_impact.items():
-                            bg_color = "rgba(76, 175, 80, 0.2)" if impact > 0 else "rgba(244, 67, 54, 0.2)"
-                            text_color = "#4caf50" if impact > 0 else "#f44336"
-                            sector_spans.append(f'<span style="background-color: {bg_color}; color: {text_color}; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem;">{sector.upper()}: {impact:+.1f}%</span>')
-                        
-                        sector_impacts_html = f"""
-                        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #444;">
-                            <div style="font-size: 0.8rem; color: #ffd700; margin-bottom: 4px;">Sector Impacts:</div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                                {" ".join(sector_spans)}
-                            </div>
-                        </div>
-                        """
+                    # Simple text display
+                    st.markdown(f"**{forecast.date}** (Day {forecast.day}) | {signal_emoji} **{forecast.signal.value}** | **{forecast.change}%**")
+                    st.markdown(f"**{forecast.event}**")
+                    st.markdown(f"_{transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name} • {transit.aspect_type.title()}_")
+                    st.markdown(f"{sentiment_emoji} Sentiment: **{forecast.sentiment.value.upper()}**")
                     
-                    st.markdown(f"""
-                    <div class="forecast-card" style="{row_style}">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <div>
-                                <div style="color: #ffd700; font-weight: bold; font-size: 1.1rem;">{forecast.date}</div>
-                                <div style="font-size: 0.8rem; color: #b8b8b8;">Day {forecast.day}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="color: {change_color}; font-size: 1.3rem; font-weight: bold; margin-bottom: 2px;">
-                                    {forecast.change}%
-                                </div>
-                                <div style="background-color: {'#4caf50' if forecast.signal == SignalType.LONG else '#f44336' if forecast.signal == SignalType.SHORT else '#ff9800'}; 
-                                           color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">
-                                    {forecast.signal.value}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-bottom: 8px;">
-                            <div style="color: #fff; font-size: 1rem; margin-bottom: 4px;">{forecast.event}</div>
-                            <div style="font-size: 0.8rem; color: #b8b8b8;">
-                                {transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name} • {transit.aspect_type.title()}
-                            </div>
-                        </div>
-                        
-                        <div style="font-size: 0.7rem; color: #b8b8b8; margin-bottom: 8px;">
-                            Sentiment: <span style="color: {change_color};">{forecast.sentiment.value.upper()}</span>
-                        </div>
-                        
-                        {sector_impacts_html}
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # Show sector impacts if any
+                    if forecast.sector_impact:
+                        sector_impacts = []
+                        for sector, impact in forecast.sector_impact.items():
+                            emoji = "📈" if impact > 0 else "📉"
+                            sector_impacts.append(f"{emoji} **{sector.upper()}**: {impact:+.1f}%")
+                        st.markdown("**Sector Impacts:** " + " | ".join(sector_impacts))
+                    
+                    st.markdown("---")
                 
                 with col2:
-                    st.markdown(f"""
-                    <div class="historical-card">
-                        <div style="color: #ff9800; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem;">📊 Analysis</div>
-                        <div style="font-size: 0.8rem; margin-bottom: 3px;">Strength: {transit.impact_strength}</div>
-                        <div style="font-size: 0.8rem; margin-bottom: 3px;">Accuracy: {transit.historical_accuracy:.1f}%</div>
-                        <div style="font-size: 0.8rem; margin-bottom: 3px;">Degree: {transit.degree:.1f}°</div>
-                        <div style="font-size: 0.8rem; color: #ffd700;">
-                            {platform.zodiac_signs[transit.zodiac_sign].element}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown("**📊 Analysis**")
+                    st.markdown(f"Strength: {transit.impact_strength}")
+                    st.markdown(f"Accuracy: {transit.historical_accuracy:.1f}%")
+                    st.markdown(f"Degree: {transit.degree:.1f}°")
+                    st.markdown(f"Element: {platform.zodiac_signs[transit.zodiac_sign].element}")
+                    st.markdown("---")
         
         with tab3:
             st.markdown("### 📈 Astrological Movement Graph")
@@ -1005,15 +870,12 @@ def main():
                 for i, pivot in enumerate(st.session_state.pivot_points):
                     if i < len(pivot_cols):
                         with pivot_cols[i]:
-                            color = "#4caf50" if pivot.pivot_type in ['support', 'low'] else "#f44336"
-                            st.markdown(f"""
-                            <div class="pivot-card">
-                                <div style="color: {color}; font-weight: bold; margin-bottom: 5px;">{pivot.pivot_type.upper()}</div>
-                                <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 5px;">{pivot.expected_move:+.2f}%</div>
-                                <div style="font-size: 0.8rem; color: #b8b8b8;">Confidence: {pivot.confidence:.1f}%</div>
-                                <div style="font-size: 0.8rem; color: #b8b8b8;">{pivot.date}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
+                            emoji = "🟢" if pivot.pivot_type in ['support', 'low'] else "🔴"
+                            st.markdown(f"**{emoji} {pivot.pivot_type.upper()}**")
+                            st.markdown(f"**{pivot.expected_move:+.2f}%**")
+                            st.markdown(f"Confidence: {pivot.confidence:.1f}%")
+                            st.markdown(f"Date: {pivot.date}")
+                            st.markdown("---")
             
             # Additional Charts
             col1, col2 = st.columns(2)
@@ -1106,50 +968,40 @@ def main():
                 else:
                     transit_desc = f"{transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name}"
                 
-                st.markdown(f"""
-                <div class="transit-detail-card">
-                    <div style="margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h3 style="color: #ffd700; margin: 0;">🌟 {transit_desc}</h3>
-                            <div style="text-align: right;">
-                                <div style="color: #ff9800; font-weight: bold; font-size: 1.1rem;">📅 {date_range}</div>
-                                <div style="color: #b8b8b8; font-size: 0.9rem;">{len(transit_dates)} day{'s' if len(transit_dates) > 1 else ''} duration</div>
-                            </div>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 15px;">
-                            <div>
-                                <div style="color: #ff9800; font-weight: bold; margin-bottom: 8px;">📊 Transit Details</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Planet:</strong> {transit.planet}</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Sign:</strong> {platform.zodiac_signs[transit.zodiac_sign].name}</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Type:</strong> {transit.transit_type.title()}</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Avg Impact:</strong> <span style="color: {'#4caf50' if avg_impact > 0 else '#f44336'};">{avg_impact:+.1f}%</span></div>
-                            </div>
-                            <div>
-                                <div style="color: #ff9800; font-weight: bold; margin-bottom: 8px;">📈 Market Impact</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Accuracy:</strong> {transit.historical_accuracy:.1f}%</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Strength:</strong> {transit.impact_strength}</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Degree:</strong> {transit.degree:.1f}°</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Sectors:</strong> {len(avg_sector_impacts)} affected</div>
-                            </div>
-                            <div>
-                                <div style="color: #ff9800; font-weight: bold; margin-bottom: 8px;">🌟 Astrological Data</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Element:</strong> {platform.zodiac_signs[transit.zodiac_sign].element}</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Quality:</strong> {platform.zodiac_signs[transit.zodiac_sign].quality}</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 3px;"><strong>Aspect:</strong> {transit.aspect_type.title() if transit.aspect_type else 'N/A'}</div>
-                                <div style="font-size: 0.9rem;"><strong>Target:</strong> {transit.aspect_planet if transit.aspect_planet else 'N/A'}</div>
-                            </div>
-                        </div>
-                        
-                        <div style="background-color: rgba(255, 215, 0, 0.1); padding: 12px; border-radius: 8px; border-left: 4px solid #ffd700;">
-                            <div style="color: #ffd700; font-weight: bold; margin-bottom: 8px;">📋 Daily Breakdown:</div>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                                {" ".join([f'<div style="background-color: rgba(255, 255, 255, 0.05); padding: 6px; border-radius: 4px;"><strong>{f.date}:</strong> <span style="color: {"#4caf50" if "+" in f.change else "#f44336"};">{f.change}%</span> - {f.signal.value}</div>' for f in transit_data['forecasts'][:8]])}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                # Display transit info using simple Streamlit components
+                st.markdown(f"### 🌟 {transit_desc}")
+                st.markdown(f"**📅 Duration:** {date_range} ({len(transit_dates)} day{'s' if len(transit_dates) > 1 else ''})")
+                
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.markdown("**📊 Transit Details**")
+                    st.markdown(f"**Planet:** {transit.planet}")
+                    st.markdown(f"**Sign:** {platform.zodiac_signs[transit.zodiac_sign].name}")
+                    st.markdown(f"**Type:** {transit.transit_type.title()}")
+                    st.markdown(f"**Avg Impact:** {avg_impact:+.1f}%")
+                
+                with col2:
+                    st.markdown("**📈 Market Impact**")
+                    st.markdown(f"**Accuracy:** {transit.historical_accuracy:.1f}%")
+                    st.markdown(f"**Strength:** {transit.impact_strength}")
+                    st.markdown(f"**Degree:** {transit.degree:.1f}°")
+                    st.markdown(f"**Sectors:** {len(avg_sector_impacts)} affected")
+                
+                with col3:
+                    st.markdown("**🌟 Astrological Data**")
+                    st.markdown(f"**Element:** {platform.zodiac_signs[transit.zodiac_sign].element}")
+                    st.markdown(f"**Quality:** {platform.zodiac_signs[transit.zodiac_sign].quality}")
+                    st.markdown(f"**Aspect:** {transit.aspect_type.title() if transit.aspect_type else 'N/A'}")
+                    st.markdown(f"**Target:** {transit.aspect_planet if transit.aspect_planet else 'N/A'}")
+                
+                # Daily breakdown
+                st.markdown("**📋 Daily Breakdown:**")
+                daily_cols = st.columns(4)
+                for i, f in enumerate(transit_data['forecasts'][:8]):
+                    with daily_cols[i % 4]:
+                        emoji = "📈" if "+" in f.change else "📉"
+                        st.markdown(f"{emoji} **{f.date}:** {f.change}% - {f.signal.value}")
                 
                 # Sector-wise Impact Analysis
                 if avg_sector_impacts:
@@ -1160,25 +1012,16 @@ def main():
                     for i, (sector, avg_impact) in enumerate(avg_sector_impacts.items()):
                         if i < len(sector_cols):
                             with sector_cols[i]:
-                                impact_color = "#4caf50" if avg_impact > 0 else "#f44336"
+                                impact_emoji = "📈" if avg_impact > 0 else "📉"
                                 recommendation = "BUY" if avg_impact > 1.5 else "HOLD" if avg_impact > -1.5 else "SELL"
                                 
                                 # Get top stocks for this sector
                                 top_stocks = platform.sectors.get(sector.lower(), ['N/A', 'N/A', 'N/A'])[:3]
                                 
-                                st.markdown(f"""
-                                <div class="sector-impact-card">
-                                    <div style="color: #ffd700; font-weight: bold; margin-bottom: 8px;">{sector.upper()}</div>
-                                    <div style="color: {impact_color}; font-size: 1.5rem; font-weight: bold; margin-bottom: 8px;">{avg_impact:+.2f}%</div>
-                                    <div style="background-color: {impact_color}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; margin-bottom: 8px; text-align: center;">
-                                        {recommendation}
-                                    </div>
-                                    <div style="font-size: 0.8rem; color: #b8b8b8; margin-bottom: 5px;">Top Stocks:</div>
-                                    <div style="font-size: 0.75rem;">
-                                        {' • '.join(top_stocks)}
-                                    </div>
-                                </div>
-                                """, unsafe_allow_html=True)
+                                st.markdown(f"**{sector.upper()}**")
+                                st.markdown(f"{impact_emoji} **{avg_impact:+.2f}%**")
+                                st.markdown(f"**Recommendation:** {recommendation}")
+                                st.markdown(f"**Top Stocks:** {' • '.join(top_stocks)}")
                 
                 # Individual Stock Performance within Sector
                 st.markdown("**🎯 Individual Stock Performance Outlook:**")
@@ -1197,16 +1040,12 @@ def main():
                                     stock_variation = np.random.uniform(-0.3, 0.3)
                                     stock_impact = avg_impact + stock_variation
                                     
-                                    stock_color = "#4caf50" if stock_impact > 0 else "#f44336"
+                                    stock_emoji = "📈" if stock_impact > 0 else "📉"
                                     performance = "OUTPERFORM" if stock_impact > avg_impact else "UNDERPERFORM"
                                     
-                                    st.markdown(f"""
-                                    <div style="background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 0.8rem; border-radius: 8px; border: 1px solid {stock_color}; text-align: center; margin-bottom: 10px;">
-                                        <div style="color: #ffd700; font-weight: bold; font-size: 0.9rem; margin-bottom: 5px;">{stock}</div>
-                                        <div style="color: {stock_color}; font-size: 1.1rem; font-weight: bold; margin-bottom: 5px;">{stock_impact:+.2f}%</div>
-                                        <div style="font-size: 0.7rem; color: #b8b8b8;">{performance}</div>
-                                    </div>
-                                    """, unsafe_allow_html=True)
+                                    st.markdown(f"**{stock}**")
+                                    st.markdown(f"{stock_emoji} **{stock_impact:+.2f}%**")
+                                    st.markdown(f"_{performance}_")
                 
                 st.markdown("---")
         

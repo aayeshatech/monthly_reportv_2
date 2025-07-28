@@ -274,15 +274,21 @@ class EnhancedAstrologicalTradingPlatform:
             # Generate sector impacts
             sector_impacts = self.get_symbol_sector_impact(symbol, sentiment, influence)
             
-            # Determine signal (more aggressive)
-            if abs(final_change) > 1.5 and accuracy > 70:
+            # Determine signal (much more aggressive - like real trading)
+            if abs(final_change) > 1.0 and accuracy > 70:
                 signal = SignalType.LONG if final_change > 0 else SignalType.SHORT
-            elif abs(final_change) > 0.8:
+            elif abs(final_change) > 0.5:
                 signal = SignalType.LONG if final_change > 0 else SignalType.SHORT
-            elif abs(final_change) > 0.3:
+            elif abs(final_change) > 0.2:
                 signal = SignalType.LONG if final_change > 0 else SignalType.SHORT
             else:
-                signal = SignalType.HOLD
+                # Even small changes get signals - real traders act on small moves
+                if sentiment == Sentiment.BULLISH:
+                    signal = SignalType.LONG
+                elif sentiment == Sentiment.BEARISH:
+                    signal = SignalType.SHORT
+                else:
+                    signal = SignalType.HOLD
             
             # Create transit description
             if transit_type == 'retrograde':
@@ -428,15 +434,21 @@ class EnhancedAstrologicalTradingPlatform:
             # Calculate sector impacts based on transit type and symbol
             transit["sectors"] = self.get_real_sector_impact(symbol, transit, influence)
             
-            # Determine signal based on change and accuracy (more aggressive)
-            if abs(final_change) > 1.5 and transit["historical_accuracy"] > 70:
+            # Determine signal based on change and accuracy (much more aggressive)
+            if abs(final_change) > 1.0 and transit["historical_accuracy"] > 65:
                 transit["signal"] = SignalType.LONG if final_change > 0 else SignalType.SHORT
-            elif abs(final_change) > 0.8:
+            elif abs(final_change) > 0.5:
                 transit["signal"] = SignalType.LONG if final_change > 0 else SignalType.SHORT
-            elif abs(final_change) > 0.3:
+            elif abs(final_change) > 0.2:
                 transit["signal"] = SignalType.LONG if final_change > 0 else SignalType.SHORT
             else:
-                transit["signal"] = SignalType.HOLD
+                # Real trading - act on sentiment even with small changes
+                if transit["sentiment"] == Sentiment.BULLISH:
+                    transit["signal"] = SignalType.LONG
+                elif transit["sentiment"] == Sentiment.BEARISH:
+                    transit["signal"] = SignalType.SHORT
+                else:
+                    transit["signal"] = SignalType.HOLD
         
         return real_august_2025_transits
 
@@ -609,17 +621,41 @@ class EnhancedAstrologicalTradingPlatform:
                     detailed_transit=detailed_transit
                 ))
             else:
-                # Generate minor daily transits with symbol influence (more dynamic)
+                # Generate minor daily transits with symbol influence (much more aggressive)
                 ruling_planets = self.symbol_planetary_rulers.get(symbol, ['jupiter', 'saturn'])
                 
-                # More varied sentiment generation
-                day_hash = (day * 17 + hash(symbol) % 97) % 100
-                if day_hash < 40:
-                    sentiment = Sentiment.BULLISH
-                elif day_hash < 80:
-                    sentiment = Sentiment.BEARISH
-                else:
-                    sentiment = Sentiment.NEUTRAL
+                # Create realistic market patterns - trends and reversals
+                day_hash = (day * 23 + hash(symbol) % 97 + year * 7 + month * 13) % 100
+                
+                # Create trend patterns like real markets
+                if day <= 7:  # Early month
+                    if day_hash < 45:
+                        sentiment = Sentiment.BULLISH  # 45% bullish
+                    elif day_hash < 85:
+                        sentiment = Sentiment.BEARISH  # 40% bearish
+                    else:
+                        sentiment = Sentiment.NEUTRAL   # 15% neutral
+                elif day <= 15:  # Mid month
+                    if day_hash < 35:
+                        sentiment = Sentiment.BEARISH  # 35% bearish
+                    elif day_hash < 75:
+                        sentiment = Sentiment.BULLISH  # 40% bullish
+                    else:
+                        sentiment = Sentiment.NEUTRAL   # 25% neutral
+                elif day <= 23:  # Late month
+                    if day_hash < 50:
+                        sentiment = Sentiment.BULLISH  # 50% bullish
+                    elif day_hash < 80:
+                        sentiment = Sentiment.BEARISH  # 30% bearish
+                    else:
+                        sentiment = Sentiment.NEUTRAL   # 20% neutral
+                else:  # End of month
+                    if day_hash < 40:
+                        sentiment = Sentiment.BEARISH  # 40% bearish
+                    elif day_hash < 75:
+                        sentiment = Sentiment.BULLISH  # 35% bullish
+                    else:
+                        sentiment = Sentiment.NEUTRAL   # 25% neutral
                 
                 # Symbol-specific minor influence
                 base_change = ((day * 37) % 100 - 50) / 100
@@ -629,11 +665,18 @@ class EnhancedAstrologicalTradingPlatform:
                 
                 signal = SignalType.LONG if sentiment == Sentiment.BULLISH else SignalType.SHORT if sentiment == Sentiment.BEARISH else SignalType.HOLD
                 
-                # Make signals more aggressive based on change
-                if abs(change_percent) > 0.5:
+                # Make signals much more aggressive - real trading approach
+                if abs(change_percent) > 0.3:
                     signal = SignalType.LONG if change_percent > 0 else SignalType.SHORT
-                elif abs(change_percent) > 0.2:
+                elif abs(change_percent) > 0.1:
                     signal = SignalType.LONG if change_percent > 0 else SignalType.SHORT
+                else:
+                    # Even tiny moves get signals based on sentiment
+                    if sentiment == Sentiment.BULLISH:
+                        signal = SignalType.LONG
+                    elif sentiment == Sentiment.BEARISH:
+                        signal = SignalType.SHORT
+                    # Only neutral gets HOLD
                 
                 # Generate minor transit
                 planets = list(self.planets.keys())
@@ -741,63 +784,114 @@ def render_front_page():
     st.info("Ready to analyze celestial influences on your trading decisions")
 
 def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year: int, platform):
-    """Render astro calendar in advanced flow chart format"""
-    st.markdown(f"## 📅 Monthly Planetary Transit Forecast")
-    st.markdown(f"### {month_name} {year}")
+    """Render astro calendar in traditional monthly calendar format"""
+    st.markdown(f"## 📅 {month_name} {year} Astrological Trading Calendar")
+    st.markdown("**Professional Monthly Trading Signals Based on Planetary Transits**")
     
-    # Filter significant transits (lower threshold for more signals)
-    significant_forecasts = [f for f in forecasts if abs(float(f.change.replace('+', '').replace('-', ''))) > 0.2][:12]
+    # Create traditional calendar layout
+    import calendar
+    import datetime
     
-    # Advanced Flow Chart Layout
-    for row in range(4):
-        cols = st.columns(3)
-        for col in range(3):
-            index = row * 3 + col
-            if index < len(significant_forecasts):
-                forecast = significant_forecasts[index]
-                transit = forecast.detailed_transit
-                
-                with cols[col]:
-                    # Professional card design
-                    card_title = f"📊 {forecast.date.replace('2025-', '')} • {forecast.change}%"
+    # Get month number (0-indexed to 1-indexed)
+    month_num = platform.month_names.index(month_name) + 1
+    
+    # Create calendar matrix
+    cal = calendar.monthcalendar(year, month_num)
+    
+    # Create forecast lookup
+    forecast_lookup = {f.day: f for f in forecasts}
+    
+    # Calendar header
+    st.markdown("### Calendar Layout")
+    days_of_week = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    
+    # Header row
+    header_cols = st.columns(7)
+    for i, day_name in enumerate(days_of_week):
+        with header_cols[i]:
+            st.markdown(f"**{day_name}**")
+    
+    # Calendar weeks
+    for week in cal:
+        week_cols = st.columns(7)
+        
+        for i, day in enumerate(week):
+            with week_cols[i]:
+                if day == 0:  # Empty cell for days not in month
+                    st.markdown("&nbsp;")
+                else:
+                    # Get forecast for this day
+                    forecast = forecast_lookup.get(day)
                     
-                    with st.expander(card_title, expanded=True):
-                        # Compact sentiment display
+                    if forecast:
+                        # Create calendar day box
+                        change_val = float(forecast.change.replace('+', '').replace('-', ''))
+                        
+                        # Day number header
+                        st.markdown(f"**{day}**")
+                        
+                        # Signal and sentiment
                         if forecast.sentiment == Sentiment.BULLISH:
-                            if "strong" in forecast.impact.lower():
-                                st.markdown("**🚀 STRONG BULLISH**", unsafe_allow_html=True)
-                                st.success("High Impact Trade")
-                            else:
-                                st.markdown("**📈 BULLISH**", unsafe_allow_html=True)
-                                st.success("Positive Signal")
-                        elif forecast.sentiment == Sentiment.BEARISH:
-                            if "strong" in forecast.impact.lower():
-                                st.markdown("**📉 STRONG BEARISH**", unsafe_allow_html=True)
-                                st.error("High Risk Alert")
-                            else:
-                                st.markdown("**📉 BEARISH**", unsafe_allow_html=True)
-                                st.error("Negative Signal")
-                        else:
-                            st.markdown("**➡️ NEUTRAL**", unsafe_allow_html=True)
-                            st.warning("Mixed Signals")
-                        
-                        # Professional signal display
-                        col_a, col_b = st.columns(2)
-                        with col_a:
                             if forecast.signal == SignalType.LONG:
-                                st.markdown("**🟢 BUY**")
-                            elif forecast.signal == SignalType.SHORT:
-                                st.markdown("**🔴 SELL**")
+                                st.success("🚀 STRONG BUY")
                             else:
-                                st.markdown("**🟡 HOLD**")
+                                st.success("📈 BULLISH")
+                            st.markdown(f"**+{abs(change_val):.1f}%**", help=f"{forecast.detailed_transit.planet} transit")
+                        elif forecast.sentiment == Sentiment.BEARISH:
+                            if forecast.signal == SignalType.SHORT:
+                                st.error("📉 STRONG SELL")
+                            else:
+                                st.error("📉 BEARISH")
+                            st.markdown(f"**-{abs(change_val):.1f}%**", help=f"{forecast.detailed_transit.planet} transit")
+                        else:
+                            st.warning("➡️ NEUTRAL")
+                            st.markdown(f"**{change_val:+.1f}%**", help=f"{forecast.detailed_transit.planet} transit")
                         
-                        with col_b:
-                            st.markdown(f"**{forecast.change}%**")
+                        # Planet symbol
+                        planet_symbol = platform.planets.get(forecast.detailed_transit.planet.lower(), Planet('⭐', forecast.detailed_transit.planet)).symbol
+                        st.markdown(f"*{planet_symbol} {forecast.detailed_transit.planet}*")
                         
-                        # Compact planet info
-                        zodiac_name = platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()
-                        st.markdown(f"*{transit.planet} in {zodiac_name}*")
-                        st.markdown(f"*Accuracy: {transit.historical_accuracy:.0f}%*")
+                        # Trading signal
+                        signal_color = {"LONG": "🟢", "SHORT": "🔴", "HOLD": "🟡"}
+                        st.markdown(f"{signal_color.get(forecast.signal.value, '🟡')} **{forecast.signal.value}**")
+                        
+                    else:
+                        # No major transit day
+                        st.markdown(f"**{day}**")
+                        st.info("Minor")
+                        st.markdown("*No major transit*")
+    
+    # Legend
+    st.markdown("---")
+    st.markdown("### 📖 Trading Signal Legend")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.success("🚀 **STRONG BUY** - Major bullish transit")
+        st.success("📈 **BULLISH** - Positive planetary influence")
+    with col2:
+        st.error("📉 **STRONG SELL** - Major bearish transit")
+        st.error("📉 **BEARISH** - Negative planetary influence")
+    with col3:
+        st.warning("➡️ **NEUTRAL** - Mixed or weak signals")
+        st.info("**Minor** - No significant planetary events")
+    
+    # Quick stats
+    st.markdown("### 📊 Monthly Trading Summary")
+    bullish_days = len([f for f in forecasts if f.sentiment == Sentiment.BULLISH])
+    bearish_days = len([f for f in forecasts if f.sentiment == Sentiment.BEARISH])
+    buy_signals = len([f for f in forecasts if f.signal == SignalType.LONG])
+    sell_signals = len([f for f in forecasts if f.signal == SignalType.SHORT])
+    
+    summary_cols = st.columns(4)
+    with summary_cols[0]:
+        st.metric("📈 Bullish Days", bullish_days)
+    with summary_cols[1]:
+        st.metric("📉 Bearish Days", bearish_days)
+    with summary_cols[2]:
+        st.metric("🟢 Buy Signals", buy_signals)
+    with summary_cols[3]:
+        st.metric("🔴 Sell Signals", sell_signals)
 
 def main():
     if 'platform' not in st.session_state:

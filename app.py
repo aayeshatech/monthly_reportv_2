@@ -1382,10 +1382,58 @@ class EnhancedAstrologicalTradingPlatform:
         forecasts = []
         
         # Get real astrological transits for July and August 2025
-        if year == 2025 and month == 6:  # July (0-indexed)
-            symbol_transits = self.generate_real_astrological_transits(symbol, year, month)
-        elif year == 2025 and month == 7:  # August (0-indexed)
-            symbol_transits = self.generate_real_astrological_transits(symbol, year, month)
+        if year == 2025 and month in [6, 7]:  # July and August (0-indexed)
+            symbol_transits = self.get_real_astronomical_transits(year, month)
+            
+            # Convert to the format expected by the rest of the code
+            converted_transits = []
+            for transit in symbol_transits:
+                # Apply symbol-specific influence
+                influence = self.get_symbol_specific_influence(symbol, transit["planet"])
+                final_change = transit.get("change", 0) * influence
+                
+                # Convert sentiment string to Sentiment enum
+                sentiment_str = transit["sentiment"]
+                if "Strong Bullish" in sentiment_str or "Very Strong Bullish" in sentiment_str:
+                    sentiment = Sentiment.BULLISH
+                elif "Bullish" in sentiment_str:
+                    sentiment = Sentiment.BULLISH
+                elif "Strong Bearish" in sentiment_str or "Very Strong Bearish" in sentiment_str:
+                    sentiment = Sentiment.BEARISH
+                elif "Bearish" in sentiment_str:
+                    sentiment = Sentiment.BEARISH
+                else:
+                    sentiment = Sentiment.NEUTRAL
+                
+                # Convert signal string to SignalType enum
+                signal_str = transit["signal"]
+                if "GO LONG" in signal_str:
+                    signal = SignalType.LONG
+                elif "CONSIDER LONG" in signal_str:
+                    signal = SignalType.LONG
+                elif "GO SHORT" in signal_str:
+                    signal = SignalType.SHORT
+                elif "CONSIDER SHORT" in signal_str:
+                    signal = SignalType.SHORT
+                else:
+                    signal = SignalType.HOLD
+                
+                converted_transit = {
+                    "date": transit["date"],
+                    "planet": transit["planet"],
+                    "aspect_type": transit["aspect_type"],
+                    "sentiment": sentiment,
+                    "change": f"{final_change:+.1f}",
+                    "signal": signal,
+                    "impact_strength": "Strong" if "Strong" in sentiment_str else "Moderate",
+                    "historical_accuracy": transit.get("accuracy", 0.7) * 100,
+                    "description": transit.get("description", f"{transit['planet']} {transit['aspect_type']} - {symbol} impact"),
+                    "sectors": {}
+                }
+                
+                converted_transits.append(converted_transit)
+            
+            symbol_transits = converted_transits
         else:
             # Fallback to generated transits for other months
             symbol_transits = self.generate_symbol_specific_transits(symbol, year, month)
@@ -1409,21 +1457,21 @@ class EnhancedAstrologicalTradingPlatform:
                     break
             
             if day_event:
-                detailed_transit = self.get_detailed_transit({**day_event, 'month': month + 1})
+                detailed_transit = DetailedTransit(
+                    date=current_date.strftime('%Y-%m-%d'),
+                    planet=day_event['planet'],
+                    transit_type=day_event.get('aspect_type', 'aspect'),
+                    zodiac_sign='leo',  # Default zodiac sign
+                    aspect_planet="",
+                    aspect_type=day_event.get('aspect_type', 'aspect'),
+                    degree=float(day * 13 % 360),
+                    impact_strength=day_event.get('impact_strength', 'Moderate'),
+                    market_sectors=day_event.get('sectors', {}),
+                    historical_accuracy=day_event.get('historical_accuracy', 70.0)
+                )
                 
-                # Create event description using real astrological data
-                if 'description' in day_event:
-                    event_desc = day_event['description']
-                elif day_event['transit_type'] == 'retrograde':
-                    event_desc = f"{day_event['planet']} Retrograde in {self.zodiac_signs[day_event['zodiac_sign']].name if day_event['zodiac_sign'] in self.zodiac_signs else day_event['zodiac_sign'].title()}"
-                elif day_event['transit_type'] == 'direct':
-                    event_desc = f"{day_event['planet']} Direct in {self.zodiac_signs[day_event['zodiac_sign']].name if day_event['zodiac_sign'] in self.zodiac_signs else day_event['zodiac_sign'].title()}"
-                elif day_event['transit_type'] == 'enters':
-                    event_desc = f"{day_event['planet']} enters {self.zodiac_signs[day_event['zodiac_sign']].name if day_event['zodiac_sign'] in self.zodiac_signs else day_event['zodiac_sign'].title()}"
-                elif day_event['transit_type'] == 'aspect':
-                    event_desc = f"{day_event['planet']} {day_event['aspect_type']} {day_event['aspect_planet']}"
-                else:
-                    event_desc = f"{day_event['planet']} transit in {self.zodiac_signs[day_event['zodiac_sign']].name if day_event['zodiac_sign'] in self.zodiac_signs else day_event['zodiac_sign'].title()}"
+                # Create event description
+                event_desc = day_event.get('description', f"{day_event['planet']} {day_event.get('aspect_type', 'transit')}")
                 
                 forecasts.append(Forecast(
                     date=current_date.strftime('%Y-%m-%d'),
@@ -1431,59 +1479,54 @@ class EnhancedAstrologicalTradingPlatform:
                     event=event_desc,
                     sentiment=day_event["sentiment"],
                     change=day_event["change"],
-                    impact=f"{'Retrograde ' if day_event.get('retrograde', False) else ''}{day_event['impact_strength']} {day_event['sentiment'].value.title()}",
+                    impact=f"{day_event['impact_strength']} {day_event['sentiment'].value.title()}",
                     sector_impact=day_event.get("sectors", {}),
                     signal=day_event["signal"],
                     detailed_transit=detailed_transit
                 ))
             else:
-                # Generate minor daily transits with symbol influence (much more aggressive)
+                # Generate minor daily transits (existing code)
                 ruling_planets = self.symbol_planetary_rulers.get(symbol, ['jupiter', 'saturn'])
                 
-                # Create realistic market patterns - ensure more bullish/bearish days
                 day_hash = (day * 23 + hash(symbol) % 97 + year * 7 + month * 13) % 100
                 
-                # Force more varied sentiments - reduce neutral bias
-                if day <= 7:  # Early month
+                if day <= 7:
                     if day_hash < 50:
-                        sentiment = Sentiment.BULLISH  # 50% bullish
+                        sentiment = Sentiment.BULLISH
                     elif day_hash < 85:
-                        sentiment = Sentiment.BEARISH  # 35% bearish
+                        sentiment = Sentiment.BEARISH
                     else:
-                        sentiment = Sentiment.NEUTRAL   # 15% neutral
-                elif day <= 15:  # Mid month
+                        sentiment = Sentiment.NEUTRAL
+                elif day <= 15:
                     if day_hash < 45:
-                        sentiment = Sentiment.BEARISH  # 45% bearish
+                        sentiment = Sentiment.BEARISH
                     elif day_hash < 85:
-                        sentiment = Sentiment.BULLISH  # 40% bullish
+                        sentiment = Sentiment.BULLISH
                     else:
-                        sentiment = Sentiment.NEUTRAL   # 15% neutral
-                elif day <= 23:  # Late month
+                        sentiment = Sentiment.NEUTRAL
+                elif day <= 23:
                     if day_hash < 55:
-                        sentiment = Sentiment.BULLISH  # 55% bullish
+                        sentiment = Sentiment.BULLISH
                     elif day_hash < 85:
-                        sentiment = Sentiment.BEARISH  # 30% bearish
+                        sentiment = Sentiment.BEARISH
                     else:
-                        sentiment = Sentiment.NEUTRAL   # 15% neutral
-                else:  # End of month
+                        sentiment = Sentiment.NEUTRAL
+                else:
                     if day_hash < 40:
-                        sentiment = Sentiment.BEARISH  # 40% bearish
+                        sentiment = Sentiment.BEARISH
                     elif day_hash < 80:
-                        sentiment = Sentiment.BULLISH  # 40% bullish
+                        sentiment = Sentiment.BULLISH
                     else:
-                        sentiment = Sentiment.NEUTRAL   # 20% neutral
+                        sentiment = Sentiment.NEUTRAL
                 
-                # Override for very specific patterns to ensure variety
-                if day % 3 == 0:  # Every 3rd day
+                if day % 3 == 0:
                     sentiment = Sentiment.BULLISH
-                elif day % 5 == 0:  # Every 5th day
+                elif day % 5 == 0:
                     sentiment = Sentiment.BEARISH
                 
-                # Symbol-specific minor influence with realistic market movements
-                base_change = ((day * 37 + year * 13 + month * 7) % 200 - 100) / 50  # Range: -2.0 to +2.0
+                base_change = ((day * 37 + year * 13 + month * 7) % 200 - 100) / 50
                 planet_influence = self.get_symbol_specific_influence(symbol, ruling_planets[0])
                 
-                # Add market volatility patterns
                 volatility_factor = 1.0
                 if sentiment == Sentiment.BULLISH:
                     volatility_factor = random.uniform(1.2, 1.8)
@@ -1492,7 +1535,6 @@ class EnhancedAstrologicalTradingPlatform:
                 
                 change_percent = base_change * planet_influence * volatility_factor
                 
-                # Ensure sentiment alignment
                 if sentiment == Sentiment.BULLISH and change_percent < 0:
                     change_percent = abs(change_percent)
                 elif sentiment == Sentiment.BEARISH and change_percent > 0:
@@ -1500,22 +1542,18 @@ class EnhancedAstrologicalTradingPlatform:
                 
                 change_str = f"{'+' if change_percent > 0 else ''}{change_percent:.1f}"
                 
-                signal = SignalType.LONG if sentiment == Sentiment.BULLISH else SignalType.SHORT if sentiment == Sentiment.BEARISH else SignalType.HOLD
-                
-                # Make signals much more aggressive - real trading approach
                 if abs(change_percent) > 0.3:
                     signal = SignalType.LONG if change_percent > 0 else SignalType.SHORT
                 elif abs(change_percent) > 0.1:
                     signal = SignalType.LONG if change_percent > 0 else SignalType.SHORT
                 else:
-                    # Even tiny moves get signals based on sentiment
                     if sentiment == Sentiment.BULLISH:
                         signal = SignalType.LONG
                     elif sentiment == Sentiment.BEARISH:
                         signal = SignalType.SHORT
-                    # Only neutral gets HOLD
+                    else:
+                        signal = SignalType.HOLD
                 
-                # Generate minor transit
                 planets = list(self.planets.keys())
                 zodiac_keys = list(self.zodiac_signs.keys())
                 random_planet = ruling_planets[0] if day % 2 == 0 else planets[day % len(planets)]

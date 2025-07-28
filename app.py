@@ -273,7 +273,7 @@ class EnhancedAstrologicalTradingPlatform:
 
     def get_symbol_specific_influence(self, symbol: str, planet: str) -> float:
         """Calculate symbol-specific planetary influence multiplier"""
-        ruling_planets = self.symbol_planetary_rulers.get(symbol, ['jupiter'])
+        ruling_planets = self.symbol_planetary_rulers.get(symbol, ['jupiter', 'saturn'])
         
         if planet.lower() in [p.lower() for p in ruling_planets]:
             return 1.5  # Stronger influence for ruling planets
@@ -425,7 +425,7 @@ class EnhancedAstrologicalTradingPlatform:
                 ))
             else:
                 # Generate minor daily transits with symbol influence
-                ruling_planets = self.symbol_planetary_rulers.get(symbol, ['jupiter'])
+                ruling_planets = self.symbol_planetary_rulers.get(symbol, ['jupiter', 'saturn'])
                 sentiment_options = [Sentiment.BULLISH, Sentiment.BEARISH, Sentiment.NEUTRAL]
                 sentiment = sentiment_options[day % 3]
                 
@@ -603,30 +603,35 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
                     impact_color = "#ff9800"
                 
                 with cols[col]:
-                    st.markdown(f"""
-                    <div class="transit-forecast-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h3 style="color: #ffd700; margin: 0; font-size: 1.1rem;">{forecast.date.replace('2025-', '')}</h3>
-                            <div style="background: {impact_color}; color: white; padding: 0.2rem 0.8rem; border-radius: 15px; font-size: 0.8rem; font-weight: bold;">
-                                {impact_label}
-                            </div>
-                        </div>
+                    # Create simplified display using native Streamlit components
+                    with st.container():
+                        # Header row
+                        col_date, col_label = st.columns([2, 1])
+                        with col_date:
+                            st.markdown(f"**📅 {forecast.date.replace('2025-', '')}**")
+                        with col_label:
+                            if forecast.sentiment == Sentiment.BULLISH:
+                                st.success(impact_label)
+                            elif forecast.sentiment == Sentiment.BEARISH:
+                                st.error(impact_label)
+                            else:
+                                st.warning(impact_label)
                         
-                        <h4 style="color: white; margin: 0 0 0.5rem 0; font-size: 1rem; line-height: 1.3;">
-                            {transit.planet} {transit.aspect_type} {transit.aspect_planet if transit.aspect_planet else ''}
-                        </h4>
+                        # Main content
+                        st.markdown(f"**{transit.planet} {transit.aspect_type} {transit.aspect_planet if transit.aspect_planet else ''}**")
                         
-                        <p style="color: #b8b8b8; margin: 0 0 1rem 0; font-size: 0.85rem;">
-                            {transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()} • {transit.aspect_type.title()}
-                        </p>
+                        zodiac_name = platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()
+                        st.markdown(f"_{transit.planet} in {zodiac_name} • {transit.aspect_type.title()}_")
                         
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <span style="color: #ffd700; font-weight: bold; font-size: 1.1rem;">Expected Change: {forecast.change}%</span>
-                            </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                        # Expected change
+                        if forecast.sentiment == Sentiment.BULLISH:
+                            st.success(f"Expected Change: {forecast.change}%")
+                        elif forecast.sentiment == Sentiment.BEARISH:
+                            st.error(f"Expected Change: {forecast.change}%")
+                        else:
+                            st.info(f"Expected Change: {forecast.change}%")
+                        
+                        st.markdown("---")
 
 def main():
     if 'platform' not in st.session_state:
@@ -685,6 +690,9 @@ def main():
     
     # Main Content
     if 'report' not in st.session_state:
+        render_front_page()
+    elif not hasattr(st.session_state, 'symbol') or not st.session_state.symbol:
+        st.error("Please select a symbol and generate analysis first.")
         render_front_page()
     else:
         # Main Content Tabs
@@ -1136,19 +1144,19 @@ def main():
                 
                 # Enhanced transit description
                 if transit.transit_type == 'retrograde':
-                    transit_desc = f"{transit.planet} Retrograde in {platform.zodiac_signs[transit.zodiac_sign].name}"
+                    transit_desc = f"{transit.planet} Retrograde in {platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()}"
                     impact_multiplier = 1.3  # Retrograde has stronger impact
                 elif transit.transit_type == 'direct':
-                    transit_desc = f"{transit.planet} Direct in {platform.zodiac_signs[transit.zodiac_sign].name}"
+                    transit_desc = f"{transit.planet} Direct in {platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()}"
                     impact_multiplier = 1.2
                 elif transit.transit_type == 'enters':
-                    transit_desc = f"{transit.planet} enters {platform.zodiac_signs[transit.zodiac_sign].name}"
+                    transit_desc = f"{transit.planet} enters {platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()}"
                     impact_multiplier = 1.1
                 elif transit.transit_type == 'aspect':
                     transit_desc = f"{transit.planet} {transit.aspect_type} {transit.aspect_planet}"
                     impact_multiplier = 1.15
                 else:
-                    transit_desc = f"{transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name}"
+                    transit_desc = f"{transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()}"
                     impact_multiplier = 1.0
                 
                 if is_ruling:
@@ -1298,8 +1306,8 @@ def main():
                     'Trading_Signal': forecast.signal.value,
                     'Historical_Accuracy_%': transit.historical_accuracy,
                     'Impact_Strength': transit.impact_strength,
-                    'Element': platform.zodiac_signs[transit.zodiac_sign].element,
-                    'Quality': platform.zodiac_signs[transit.zodiac_sign].quality
+                    'Element': platform.zodiac_signs[transit.zodiac_sign].element if transit.zodiac_sign in platform.zodiac_signs else 'Unknown',
+                    'Quality': platform.zodiac_signs[transit.zodiac_sign].quality if transit.zodiac_sign in platform.zodiac_signs else 'Unknown'
                 }
                 
                 # Add sector impacts

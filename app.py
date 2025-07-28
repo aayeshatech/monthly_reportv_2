@@ -809,151 +809,169 @@ def main():
         with tab3:
             st.markdown("### 📈 Astrological Movement Graph")
             
-            # Create enhanced forecast dataframe
-            df_forecasts = pd.DataFrame([
-                {
-                    'date': f.date,
-                    'change': float(f.change.replace('+', '').replace('-', '')),
-                    'sentiment': f.sentiment.value,
-                    'signal': f.signal.value,
-                    'event': f.event,
-                    'impact_strength': f.detailed_transit.impact_strength,
-                    'historical_accuracy': f.detailed_transit.historical_accuracy
-                } for f in forecasts
-            ])
-            df_forecasts['date'] = pd.to_datetime(df_forecasts['date'])
-            df_forecasts['change_signed'] = df_forecasts.apply(
-                lambda row: row['change'] if row['sentiment'] != 'bearish' else -row['change'], axis=1
-            )
-            
-            # Enhanced price movement chart with clearer date-wise movements
-            fig = go.Figure()
-            
-            # Add main price line with better visibility
-            fig.add_trace(go.Scatter(
-                x=df_forecasts['date'],
-                y=df_forecasts['change_signed'],
-                mode='lines+markers+text',
-                name='Daily Movement',
-                line=dict(color='#ffd700', width=4),
-                marker=dict(
-                    size=df_forecasts['change'] * 4 + 8,
-                    color=df_forecasts['change_signed'], 
-                    colorscale=['red', 'orange', 'yellow', 'lightgreen', 'green'], 
-                    showscale=True,
-                    colorbar=dict(title="Daily Change %", titleside="right"),
-                    line=dict(width=2, color='white')
-                ),
-                text=[f"{change:+.1f}%" for change in df_forecasts['change_signed']],
-                textposition="top center",
-                textfont=dict(size=10, color='white'),
-                hovertemplate='<b>%{text}</b><br>' +
-                             'Date: %{x}<br>' +
-                             'Movement: %{y:.2f}%<br>' +
-                             'Event: %{customdata[0]}<br>' +
-                             'Accuracy: %{customdata[1]:.1f}%<br>' +
-                             'Signal: %{customdata[2]}<extra></extra>',
-                customdata=list(zip(df_forecasts['event'], 
-                                  df_forecasts['historical_accuracy'],
-                                  df_forecasts['signal']))
-            ))
-            
-            # Add cumulative movement line
-            cumulative_change = df_forecasts['change_signed'].cumsum()
-            fig.add_trace(go.Scatter(
-                x=df_forecasts['date'],
-                y=cumulative_change,
-                mode='lines',
-                name='Cumulative Movement',
-                line=dict(color='#ff6b35', width=2, dash='dash'),
-                hovertemplate='Cumulative: %{y:.2f}%<extra></extra>'
-            ))
-            
-            # Add zero line
-            fig.add_hline(y=0, line_dash="solid", line_color="white", opacity=0.3, line_width=1)
-            
-            # Color-code background for positive/negative zones
-            fig.add_hrect(y0=0, y1=max(df_forecasts['change_signed'].max(), 5), 
-                         fillcolor="rgba(76, 175, 80, 0.1)", layer="below", line_width=0)
-            fig.add_hrect(y0=min(df_forecasts['change_signed'].min(), -5), y1=0, 
-                         fillcolor="rgba(244, 67, 54, 0.1)", layer="below", line_width=0)
-            
-            # Add pivot points with better visibility
-            if 'pivot_points' in st.session_state:
-                pivot_points = st.session_state.pivot_points
-                pivot_dates = [pd.to_datetime(p.date) for p in pivot_points]
-                pivot_values = [p.expected_move for p in pivot_points]
-                pivot_types = [p.pivot_type for p in pivot_points]
-                
-                # Support levels
-                support_dates = [d for d, t in zip(pivot_dates, pivot_types) if t == 'support']
-                support_values = [v for v, t in zip(pivot_values, pivot_types) if t == 'support']
-                
-                if support_dates:
-                    fig.add_trace(go.Scatter(
-                        x=support_dates,
-                        y=support_values,
-                        mode='markers+text',
-                        name='Support Levels',
-                        marker=dict(color='#4caf50', size=15, symbol='triangle-up', line=dict(width=2, color='white')),
-                        text=[f"Support<br>{v:+.1f}%" for v in support_values],
-                        textposition="bottom center",
-                        hovertemplate='Support Level<br>Date: %{x}<br>Level: %{y:.2f}%<extra></extra>'
-                    ))
-                
-                # Resistance levels
-                resistance_dates = [d for d, t in zip(pivot_dates, pivot_types) if t == 'resistance']
-                resistance_values = [v for v, t in zip(pivot_values, pivot_types) if t == 'resistance']
-                
-                if resistance_dates:
-                    fig.add_trace(go.Scatter(
-                        x=resistance_dates,
-                        y=resistance_values,
-                        mode='markers+text',
-                        name='Resistance Levels',
-                        marker=dict(color='#f44336', size=15, symbol='triangle-down', line=dict(width=2, color='white')),
-                        text=[f"Resistance<br>{v:+.1f}%" for v in resistance_values],
-                        textposition="top center",
-                        hovertemplate='Resistance Level<br>Date: %{x}<br>Level: %{y:.2f}%<extra></extra>'
-                    ))
-            
-            # Add annotations for major swing dates
-            major_swings = df_forecasts[df_forecasts['change'] > 2]
-            for _, swing in major_swings.iterrows():
-                fig.add_annotation(
-                    x=swing['date'],
-                    y=swing['change_signed'],
-                    text=f"<b>Major Swing</b><br>{swing['change_signed']:+.1f}%<br>{swing['event'][:30]}...",
-                    showarrow=True,
-                    arrowhead=2,
-                    arrowsize=1.5,
-                    arrowwidth=3,
-                    arrowcolor="#ffd700",
-                    font=dict(size=10, color="white"),
-                    bgcolor="rgba(26, 26, 46, 0.9)",
-                    bordercolor="#ffd700",
-                    borderwidth=2,
-                    ax=0,
-                    ay=-40 if swing['change_signed'] > 0 else 40
+            # Create enhanced forecast dataframe with error handling
+            try:
+                df_forecasts = pd.DataFrame([
+                    {
+                        'date': f.date,
+                        'change': float(f.change.replace('+', '').replace('-', '')),
+                        'sentiment': f.sentiment.value,
+                        'signal': f.signal.value,
+                        'event': f.event,
+                        'impact_strength': f.detailed_transit.impact_strength,
+                        'historical_accuracy': f.detailed_transit.historical_accuracy
+                    } for f in forecasts
+                ])
+                df_forecasts['date'] = pd.to_datetime(df_forecasts['date'])
+                df_forecasts['change_signed'] = df_forecasts.apply(
+                    lambda row: row['change'] if row['sentiment'] != 'bearish' else -row['change'], axis=1
                 )
-            
-            fig.update_layout(
-                title=f"Planetary Transit Impact Analysis - {st.session_state.symbol} ({platform.month_names[st.session_state.month]} {st.session_state.year})",
-                xaxis_title="Date",
-                yaxis_title="Expected Change (%)",
-                template="plotly_dark",
-                showlegend=True,
-                height=700,
-                hovermode='x unified'
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
+                
+                # Enhanced price movement chart with clearer date-wise movements
+                fig = go.Figure()
+                
+                # Add main price line with better visibility
+                fig.add_trace(go.Scatter(
+                    x=df_forecasts['date'],
+                    y=df_forecasts['change_signed'],
+                    mode='lines+markers+text',
+                    name='Daily Movement',
+                    line=dict(color='#ffd700', width=4),
+                    marker=dict(
+                        size=df_forecasts['change'] * 4 + 8,
+                        color=df_forecasts['change_signed'], 
+                        colorscale=['red', 'orange', 'yellow', 'lightgreen', 'green'], 
+                        showscale=True,
+                        colorbar=dict(
+                            title="Daily Change %",
+                            x=1.02
+                        ),
+                        line=dict(width=2, color='white')
+                    ),
+                    text=[f"{change:+.1f}%" for change in df_forecasts['change_signed']],
+                    textposition="top center",
+                    textfont=dict(size=10, color='white'),
+                    hovertemplate='<b>%{text}</b><br>' +
+                                 'Date: %{x}<br>' +
+                                 'Movement: %{y:.2f}%<br>' +
+                                 'Event: %{customdata[0]}<br>' +
+                                 'Accuracy: %{customdata[1]:.1f}%<br>' +
+                                 'Signal: %{customdata[2]}<extra></extra>',
+                    customdata=list(zip(df_forecasts['event'], 
+                                      df_forecasts['historical_accuracy'],
+                                      df_forecasts['signal']))
+                ))
+                
+                # Add cumulative movement line
+                cumulative_change = df_forecasts['change_signed'].cumsum()
+                fig.add_trace(go.Scatter(
+                    x=df_forecasts['date'],
+                    y=cumulative_change,
+                    mode='lines',
+                    name='Cumulative Movement',
+                    line=dict(color='#ff6b35', width=2, dash='dash'),
+                    hovertemplate='Cumulative: %{y:.2f}%<extra></extra>'
+                ))
+                
+                # Add zero line
+                fig.add_hline(y=0, line_dash="solid", line_color="white", opacity=0.3, line_width=1)
+                
+                # Color-code background for positive/negative zones
+                max_val = max(df_forecasts['change_signed'].max(), 5)
+                min_val = min(df_forecasts['change_signed'].min(), -5)
+                
+                fig.add_hrect(y0=0, y1=max_val, 
+                             fillcolor="rgba(76, 175, 80, 0.1)", layer="below", line_width=0)
+                fig.add_hrect(y0=min_val, y1=0, 
+                             fillcolor="rgba(244, 67, 54, 0.1)", layer="below", line_width=0)
+                
+                # Add pivot points with better visibility
+                if 'pivot_points' in st.session_state and st.session_state.pivot_points:
+                    pivot_points = st.session_state.pivot_points
+                    pivot_dates = [pd.to_datetime(p.date) for p in pivot_points]
+                    pivot_values = [p.expected_move for p in pivot_points]
+                    pivot_types = [p.pivot_type for p in pivot_points]
+                    
+                    # Support levels
+                    support_dates = [d for d, t in zip(pivot_dates, pivot_types) if t == 'support']
+                    support_values = [v for v, t in zip(pivot_values, pivot_types) if t == 'support']
+                    
+                    if support_dates:
+                        fig.add_trace(go.Scatter(
+                            x=support_dates,
+                            y=support_values,
+                            mode='markers+text',
+                            name='Support Levels',
+                            marker=dict(color='#4caf50', size=15, symbol='triangle-up', line=dict(width=2, color='white')),
+                            text=[f"Support<br>{v:+.1f}%" for v in support_values],
+                            textposition="bottom center",
+                            hovertemplate='Support Level<br>Date: %{x}<br>Level: %{y:.2f}%<extra></extra>'
+                        ))
+                    
+                    # Resistance levels
+                    resistance_dates = [d for d, t in zip(pivot_dates, pivot_types) if t == 'resistance']
+                    resistance_values = [v for v, t in zip(pivot_values, pivot_types) if t == 'resistance']
+                    
+                    if resistance_dates:
+                        fig.add_trace(go.Scatter(
+                            x=resistance_dates,
+                            y=resistance_values,
+                            mode='markers+text',
+                            name='Resistance Levels',
+                            marker=dict(color='#f44336', size=15, symbol='triangle-down', line=dict(width=2, color='white')),
+                            text=[f"Resistance<br>{v:+.1f}%" for v in resistance_values],
+                            textposition="top center",
+                            hovertemplate='Resistance Level<br>Date: %{x}<br>Level: %{y:.2f}%<extra></extra>'
+                        ))
+                
+                # Add annotations for major swing dates
+                major_swings = df_forecasts[df_forecasts['change'] > 2]
+                for _, swing in major_swings.iterrows():
+                    fig.add_annotation(
+                        x=swing['date'],
+                        y=swing['change_signed'],
+                        text=f"<b>Major Swing</b><br>{swing['change_signed']:+.1f}%<br>{swing['event'][:30]}...",
+                        showarrow=True,
+                        arrowhead=2,
+                        arrowsize=1.5,
+                        arrowwidth=3,
+                        arrowcolor="#ffd700",
+                        font=dict(size=10, color="white"),
+                        bgcolor="rgba(26, 26, 46, 0.9)",
+                        bordercolor="#ffd700",
+                        borderwidth=2,
+                        ax=0,
+                        ay=-40 if swing['change_signed'] > 0 else 40
+                    )
+                
+                fig.update_layout(
+                    title=f"Planetary Transit Impact Analysis - {st.session_state.symbol} ({platform.month_names[st.session_state.month]} {st.session_state.year})",
+                    xaxis_title="Date",
+                    yaxis_title="Expected Change (%)",
+                    template="plotly_dark",
+                    showlegend=True,
+                    height=700,
+                    hovermode='x unified'
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+            except Exception as e:
+                st.error(f"Error creating chart: {str(e)}")
+                st.info("Using simplified chart view...")
+                
+                # Fallback simple chart
+                simple_df = pd.DataFrame([
+                    {'Date': f.date, 'Change': f.change, 'Signal': f.signal.value} 
+                    for f in forecasts[:10]  # Show first 10 days
+                ])
+                st.dataframe(simple_df)
             
             # Pivot Points Summary
             if 'pivot_points' in st.session_state and st.session_state.pivot_points:
                 st.markdown("#### 🎯 Key Pivot Points & Price Levels")
                 
-                pivot_cols = st.columns(len(st.session_state.pivot_points))
+                pivot_cols = st.columns(min(4, len(st.session_state.pivot_points)))
                 for i, pivot in enumerate(st.session_state.pivot_points):
                     if i < len(pivot_cols):
                         with pivot_cols[i]:
@@ -971,31 +989,37 @@ def main():
             col1, col2 = st.columns(2)
             
             with col1:
-                # Signal Distribution
-                signal_counts = df_forecasts['signal'].value_counts()
-                fig2 = px.bar(
-                    x=signal_counts.index,
-                    y=signal_counts.values,
-                    title="Trading Signal Distribution",
-                    color=signal_counts.values,
-                    color_continuous_scale=['red', 'orange', 'green']
-                )
-                fig2.update_layout(template="plotly_dark", showlegend=False)
-                st.plotly_chart(fig2, use_container_width=True)
+                try:
+                    # Signal Distribution
+                    signal_counts = df_forecasts['signal'].value_counts()
+                    fig2 = px.bar(
+                        x=signal_counts.index,
+                        y=signal_counts.values,
+                        title="Trading Signal Distribution",
+                        color=signal_counts.values,
+                        color_continuous_scale=['red', 'orange', 'green']
+                    )
+                    fig2.update_layout(template="plotly_dark", showlegend=False)
+                    st.plotly_chart(fig2, use_container_width=True)
+                except:
+                    st.info("Signal distribution chart unavailable")
             
             with col2:
-                # Accuracy vs Impact
-                fig3 = px.scatter(
-                    df_forecasts,
-                    x='historical_accuracy',
-                    y='change',
-                    color='sentiment',
-                    size='change',
-                    title="Historical Accuracy vs Expected Impact",
-                    color_discrete_map={'bullish': '#4caf50', 'bearish': '#f44336', 'neutral': '#ff9800'}
-                )
-                fig3.update_layout(template="plotly_dark")
-                st.plotly_chart(fig3, use_container_width=True)
+                try:
+                    # Accuracy vs Impact
+                    fig3 = px.scatter(
+                        df_forecasts,
+                        x='historical_accuracy',
+                        y='change',
+                        color='sentiment',
+                        size='change',
+                        title="Historical Accuracy vs Expected Impact",
+                        color_discrete_map={'bullish': '#4caf50', 'bearish': '#f44336', 'neutral': '#ff9800'}
+                    )
+                    fig3.update_layout(template="plotly_dark")
+                    st.plotly_chart(fig3, use_container_width=True)
+                except:
+                    st.info("Accuracy vs Impact chart unavailable")
         
         with tab4:
             st.markdown("### 🌙 Planetary Transit Analysis")

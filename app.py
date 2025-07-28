@@ -1339,24 +1339,34 @@ class EnhancedAstrologicalTradingPlatform:
         try:
             intraday_data = []
             
-            # Market hours (9:00 AM to 4:00 PM)
-            start_time = datetime.datetime.combine(selected_date, datetime.time(9, 0))
-            end_time = datetime.datetime.combine(selected_date, datetime.time(16, 0))
+            # Extended trading hours (5:00 AM to 11:55 PM)
+            start_time = datetime.datetime.combine(selected_date, datetime.time(5, 0))
+            end_time = datetime.datetime.combine(selected_date, datetime.time(23, 55))
             
             # Generate data points every 30 minutes
             current_time = start_time
             base_price = 100.0
             cumulative_change = 0.0
             
-            # Planetary transit schedule (simplified for demo)
+            # Extended planetary transit schedule (covering full day)
             transit_schedule = [
+                {'time': datetime.time(5, 30), 'planet': 'Moon', 'transit': 'Sextile', 'impact': 0.4},
+                {'time': datetime.time(6, 45), 'planet': 'Mercury', 'transit': 'Trine', 'impact': 0.6},
+                {'time': datetime.time(8, 15), 'planet': 'Venus', 'transit': 'Conjunction', 'impact': 0.8},
                 {'time': datetime.time(9, 30), 'planet': 'Mercury', 'transit': 'Conjunction', 'impact': 1.2},
                 {'time': datetime.time(10, 15), 'planet': 'Venus', 'transit': 'Trine', 'impact': 0.8},
                 {'time': datetime.time(11, 45), 'planet': 'Mars', 'transit': 'Square', 'impact': -1.5},
                 {'time': datetime.time(12, 30), 'planet': 'Jupiter', 'transit': 'Sextile', 'impact': 0.9},
                 {'time': datetime.time(13, 20), 'planet': 'Saturn', 'transit': 'Opposition', 'impact': -1.1},
                 {'time': datetime.time(14, 45), 'planet': 'Mercury', 'transit': 'Trine', 'impact': 0.7},
-                {'time': datetime.time(15, 30), 'planet': 'Venus', 'transit': 'Square', 'impact': -0.6}
+                {'time': datetime.time(15, 30), 'planet': 'Venus', 'transit': 'Square', 'impact': -0.6},
+                {'time': datetime.time(16, 45), 'planet': 'Mars', 'transit': 'Trine', 'impact': 1.0},
+                {'time': datetime.time(18, 20), 'planet': 'Jupiter', 'transit': 'Opposition', 'impact': -0.8},
+                {'time': datetime.time(19, 15), 'planet': 'Moon', 'transit': 'Square', 'impact': -0.5},
+                {'time': datetime.time(20, 30), 'planet': 'Saturn', 'transit': 'Trine', 'impact': 0.9},
+                {'time': datetime.time(21, 45), 'planet': 'Mercury', 'transit': 'Opposition', 'impact': -0.7},
+                {'time': datetime.time(22, 30), 'planet': 'Venus', 'transit': 'Sextile', 'impact': 0.5},
+                {'time': datetime.time(23, 15), 'planet': 'Moon', 'transit': 'Conjunction', 'impact': 0.6}
             ]
             
             # Convert transit times to datetime objects
@@ -1599,22 +1609,6 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
         st.metric("🟢 Buy Signals", buy_signals)
     with summary_cols[3]:
         st.metric("🔴 Sell Signals", sell_signals)
-    
-    # Market Reality Check for July 2025
-    if month_name == "July" and year == 2025:
-        st.markdown("---")
-        st.warning("""
-        ### ⚠️ Market Reality Check - July 2025
-        **Actual Market Movement:** Gold fell heavily from 3440 to 3320 during July 23-25, 2025 (-3.5% drop)
-        
-        **Key Bearish Astrological Events:**
-        - **July 22**: Venus opposes Pluto - Financial transformation pressure
-        - **July 23**: Mars opposes Neptune - Major confusion and selling pressure  
-        - **July 24**: Sun square Uranus - Sudden disruptions and panic selling
-        - **July 25**: Mercury Rx square Jupiter - Overconfidence collapse
-        
-        The updated calendar now shows **SHORT signals** for July 23-25 based on these major bearish transits.
-        """)
     
     # General disclaimer
     st.info("""
@@ -2231,13 +2225,16 @@ def main():
                                 showlegend=True
                             ))
                         
-                        # Add market session indicators
+                        # Add extended trading session indicators
                         session_times = [
-                            {'name': 'Opening Bell', 'time': '09:00', 'color': '#00ff00'},
-                            {'name': 'Mid Morning', 'time': '10:30', 'color': '#ffff00'},
-                            {'name': 'Lunch Hour', 'time': '12:00', 'color': '#ff9800'},
-                            {'name': 'Power Hour', 'time': '15:00', 'color': '#ff0000'},
-                            {'name': 'Closing Bell', 'time': '16:00', 'color': '#800080'}
+                            {'name': 'Pre-Market', 'time': '05:00', 'color': '#00ff00'},
+                            {'name': 'Early Morning', 'time': '07:00', 'color': '#ffff00'},
+                            {'name': 'Market Open', 'time': '09:00', 'color': '#ff9800'},
+                            {'name': 'Mid Day', 'time': '12:00', 'color': '#ff0000'},
+                            {'name': 'Afternoon', 'time': '15:00', 'color': '#800080'},
+                            {'name': 'Evening', 'time': '18:00', 'color': '#0080ff'},
+                            {'name': 'Night Session', 'time': '21:00', 'color': '#ff69b4'},
+                            {'name': 'Late Night', 'time': '23:30', 'color': '#8b4513'}
                         ]
                         
                         for session in session_times:
@@ -2252,8 +2249,8 @@ def main():
                             )
                         
                         fig_intraday.update_layout(
-                            title=f"Intraday Planetary Transits - {st.session_state.symbol} ({selected_date})",
-                            xaxis_title="Time (Market Hours: 09:00 - 16:00)",
+                            title=f"24-Hour Planetary Transits - {st.session_state.symbol} ({selected_date})",
+                            xaxis_title="Time (Extended Hours: 05:00 - 23:55)",
                             yaxis_title="Price Change (%)",
                             template="plotly_dark",
                             showlegend=True,
@@ -2262,7 +2259,7 @@ def main():
                             font=dict(color="white"),
                             xaxis=dict(
                                 tickformat='%H:%M',
-                                dtick=3600000  # 1 hour in milliseconds
+                                dtick=7200000  # 2 hours in milliseconds
                             )
                         )
                         
@@ -2373,8 +2370,8 @@ def main():
                     # Fallback intraday demo data
                     st.info("Showing demo intraday data...")
                     demo_times = pd.date_range(
-                        start=f"{selected_date} 09:00:00",
-                        end=f"{selected_date} 16:00:00",
+                        start=f"{selected_date} 05:00:00",
+                        end=f"{selected_date} 23:55:00",
                         freq='30T'
                     )
                     
@@ -2414,8 +2411,8 @@ def main():
                     ))
                     
                     fig_demo.update_layout(
-                        title=f"Demo Intraday Chart - {st.session_state.symbol} ({selected_date})",
-                        xaxis_title="Time",
+                        title=f"Demo 24-Hour Chart - {st.session_state.symbol} ({selected_date})",
+                        xaxis_title="Time (Extended Hours: 05:00 - 23:55)",
                         yaxis_title="Price Change (%)",
                         template="plotly_dark",
                         height=500

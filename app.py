@@ -402,15 +402,15 @@ class EnhancedAstrologicalTradingPlatform:
                 
                 # Create event description
                 if day_event['transit_type'] == 'retrograde':
-                    event_desc = f"{day_event['planet']} Retrograde in {self.zodiac_signs[day_event['zodiac_sign']].name}"
+                    event_desc = f"{day_event['planet']} Retrograde in {self.zodiac_signs[day_event['zodiac_sign']].name if day_event['zodiac_sign'] in self.zodiac_signs else day_event['zodiac_sign'].title()}"
                 elif day_event['transit_type'] == 'direct':
-                    event_desc = f"{day_event['planet']} Direct in {self.zodiac_signs[day_event['zodiac_sign']].name}"
+                    event_desc = f"{day_event['planet']} Direct in {self.zodiac_signs[day_event['zodiac_sign']].name if day_event['zodiac_sign'] in self.zodiac_signs else day_event['zodiac_sign'].title()}"
                 elif day_event['transit_type'] == 'enters':
-                    event_desc = f"{day_event['planet']} enters {self.zodiac_signs[day_event['zodiac_sign']].name}"
+                    event_desc = f"{day_event['planet']} enters {self.zodiac_signs[day_event['zodiac_sign']].name if day_event['zodiac_sign'] in self.zodiac_signs else day_event['zodiac_sign'].title()}"
                 elif day_event['transit_type'] == 'aspect':
                     event_desc = f"{day_event['planet']} {day_event['aspect_type']} {day_event['aspect_planet']}"
                 else:
-                    event_desc = f"{day_event['planet']} transit in {self.zodiac_signs[day_event['zodiac_sign']].name}"
+                    event_desc = f"{day_event['planet']} transit in {self.zodiac_signs[day_event['zodiac_sign']].name if day_event['zodiac_sign'] in self.zodiac_signs else day_event['zodiac_sign'].title()}"
                 
                 forecasts.append(Forecast(
                     date=current_date.strftime('%Y-%m-%d'),
@@ -563,7 +563,7 @@ def render_front_page():
     </div>
     """, unsafe_allow_html=True)
 
-def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year: int):
+def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year: int, platform):
     """Render astro calendar in the requested format"""
     st.markdown(f"""
     <div class="symbol-header">
@@ -617,7 +617,7 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
                         </h4>
                         
                         <p style="color: #b8b8b8; margin: 0 0 1rem 0; font-size: 0.85rem;">
-                            {transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name} • {transit.aspect_type.title()}
+                            {transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()} • {transit.aspect_type.title()}
                         </p>
                         
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -672,13 +672,16 @@ def main():
     
     # Generate Analysis Button
     if st.sidebar.button("🚀 Generate Analysis", type="primary"):
-        with st.spinner(f"🔮 Calculating planetary positions for {symbol}..."):
-            st.session_state.report = platform.generate_enhanced_monthly_forecast(symbol, selected_year, selected_month)
-            st.session_state.symbol = symbol
-            st.session_state.month = selected_month
-            st.session_state.year = selected_year
-            st.session_state.analysis_type = analysis_type
-            st.session_state.pivot_points = platform.generate_pivot_points(st.session_state.report)
+        if symbol and symbol.strip():  # Ensure symbol is not empty
+            with st.spinner(f"🔮 Calculating planetary positions for {symbol}..."):
+                st.session_state.report = platform.generate_enhanced_monthly_forecast(symbol, selected_year, selected_month)
+                st.session_state.symbol = symbol
+                st.session_state.month = selected_month
+                st.session_state.year = selected_year
+                st.session_state.analysis_type = analysis_type
+                st.session_state.pivot_points = platform.generate_pivot_points(st.session_state.report)
+        else:
+            st.sidebar.error("Please enter a valid stock symbol")
     
     # Main Content
     if 'report' not in st.session_state:
@@ -716,7 +719,7 @@ def main():
                     """, unsafe_allow_html=True)
             
             # Render Astro Calendar Grid
-            render_astro_calendar_grid(forecasts, month_name, st.session_state.year)
+            render_astro_calendar_grid(forecasts, month_name, st.session_state.year, platform)
             
             # Additional daily details
             st.markdown("### 📋 Complete Daily Transit Details")

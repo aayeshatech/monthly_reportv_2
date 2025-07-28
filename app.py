@@ -1334,6 +1334,99 @@ class EnhancedAstrologicalTradingPlatform:
         
         return pivot_points
 
+    def generate_intraday_transit_data(self, symbol: str, selected_date: datetime.date) -> List[Dict]:
+        """Generate intraday planetary transit data for a specific date"""
+        try:
+            intraday_data = []
+            
+            # Market hours (9:00 AM to 4:00 PM)
+            start_time = datetime.datetime.combine(selected_date, datetime.time(9, 0))
+            end_time = datetime.datetime.combine(selected_date, datetime.time(16, 0))
+            
+            # Generate data points every 30 minutes
+            current_time = start_time
+            base_price = 100.0
+            cumulative_change = 0.0
+            
+            # Planetary transit schedule (simplified for demo)
+            transit_schedule = [
+                {'time': datetime.time(9, 30), 'planet': 'Mercury', 'transit': 'Conjunction', 'impact': 1.2},
+                {'time': datetime.time(10, 15), 'planet': 'Venus', 'transit': 'Trine', 'impact': 0.8},
+                {'time': datetime.time(11, 45), 'planet': 'Mars', 'transit': 'Square', 'impact': -1.5},
+                {'time': datetime.time(12, 30), 'planet': 'Jupiter', 'transit': 'Sextile', 'impact': 0.9},
+                {'time': datetime.time(13, 20), 'planet': 'Saturn', 'transit': 'Opposition', 'impact': -1.1},
+                {'time': datetime.time(14, 45), 'planet': 'Mercury', 'transit': 'Trine', 'impact': 0.7},
+                {'time': datetime.time(15, 30), 'planet': 'Venus', 'transit': 'Square', 'impact': -0.6}
+            ]
+            
+            # Convert transit times to datetime objects
+            transit_times = []
+            for transit in transit_schedule:
+                transit_datetime = datetime.datetime.combine(selected_date, transit['time'])
+                transit_times.append({
+                    'datetime': transit_datetime,
+                    'planet': transit['planet'],
+                    'transit': transit['transit'],
+                    'impact': transit['impact']
+                })
+            
+            while current_time <= end_time:
+                # Check if there's a major transit at this time
+                is_major_transit = False
+                transit_info = {'planet': 'Background', 'transit': 'Minor', 'impact': 0}
+                
+                for transit in transit_times:
+                    time_diff = abs((current_time - transit['datetime']).total_seconds())
+                    if time_diff <= 900:  # Within 15 minutes
+                        is_major_transit = True
+                        transit_info = transit
+                        break
+                
+                # Calculate price change based on transit impact
+                if is_major_transit:
+                    # Apply symbol-specific influence
+                    ruling_planets = self.symbol_planetary_rulers.get(symbol, ['jupiter', 'saturn'])
+                    influence_multiplier = 1.5 if transit_info['planet'].lower() in [p.lower() for p in ruling_planets] else 1.0
+                    
+                    price_change = transit_info['impact'] * influence_multiplier
+                else:
+                    # Minor background movement
+                    price_change = random.uniform(-0.3, 0.3)
+                
+                cumulative_change += price_change
+                
+                # Determine sentiment and signal
+                if price_change > 0.5:
+                    sentiment = 'bullish'
+                    signal = 'LONG'
+                elif price_change < -0.5:
+                    sentiment = 'bearish'
+                    signal = 'SHORT'
+                else:
+                    sentiment = 'neutral'
+                    signal = 'HOLD'
+                
+                intraday_data.append({
+                    'datetime': current_time,
+                    'price_change': price_change,
+                    'cumulative_change': cumulative_change,
+                    'sentiment': sentiment,
+                    'signal': signal,
+                    'planet': transit_info['planet'],
+                    'transit_type': transit_info['transit'],
+                    'is_major_transit': is_major_transit,
+                    'volume_impact': abs(price_change) * 1000 + random.uniform(500, 1500)
+                })
+                
+                # Move to next time point (30 minutes)
+                current_time += datetime.timedelta(minutes=30)
+            
+            return intraday_data
+            
+        except Exception as e:
+            # Return empty list if generation fails
+            return []
+
 
 def render_front_page():
     st.markdown('# 🌟 Advanced Astrological Trading Platform')
@@ -1965,75 +2058,364 @@ def main():
             st.markdown(f"## 📈 {st.session_state.symbol} Astrological Movement Graph")
             st.markdown("### Dynamic Planetary Transit Impact Visualization")
             
-            # Create enhanced forecast dataframe
-            try:
-                df_forecasts = pd.DataFrame([
-                    {
-                        'date': f.date,
-                        'change': float(f.change.replace('+', '').replace('-', '')),
-                        'sentiment': f.sentiment.value,
-                        'signal': f.signal.value,
-                        'event': f.event,
-                        'impact_strength': f.detailed_transit.impact_strength,
-                        'historical_accuracy': f.detailed_transit.historical_accuracy,
-                        'planet': f.detailed_transit.planet
-                    } for f in forecasts
-                ])
-                df_forecasts['date'] = pd.to_datetime(df_forecasts['date'])
-                df_forecasts['change_signed'] = df_forecasts.apply(
-                    lambda row: row['change'] if row['sentiment'] != 'bearish' else -row['change'], axis=1
+            # Chart type selection
+            chart_type = st.radio(
+                "📊 Select Chart Type:",
+                ["Daily Chart (Monthly)", "Intraday Chart (Transit-based)"],
+                index=0,
+                horizontal=True
+            )
+            
+            if chart_type == "Daily Chart (Monthly)":
+                # Create enhanced forecast dataframe for daily chart
+                try:
+                    df_forecasts = pd.DataFrame([
+                        {
+                            'date': f.date,
+                            'change': float(f.change.replace('+', '').replace('-', '')),
+                            'sentiment': f.sentiment.value,
+                            'signal': f.signal.value,
+                            'event': f.event,
+                            'impact_strength': f.detailed_transit.impact_strength,
+                            'historical_accuracy': f.detailed_transit.historical_accuracy,
+                            'planet': f.detailed_transit.planet
+                        } for f in forecasts
+                    ])
+                    df_forecasts['date'] = pd.to_datetime(df_forecasts['date'])
+                    df_forecasts['change_signed'] = df_forecasts.apply(
+                        lambda row: row['change'] if row['sentiment'] != 'bearish' else -row['change'], axis=1
+                    )
+                    
+                    # Enhanced interactive chart
+                    fig = go.Figure()
+                    
+                    # Main price movement line with dynamic colors
+                    colors = ['#f44336' if s == 'bearish' else '#4caf50' if s == 'bullish' else '#ff9800' 
+                             for s in df_forecasts['sentiment']]
+                    
+                    fig.add_trace(go.Scatter(
+                        x=df_forecasts['date'],
+                        y=df_forecasts['change_signed'],
+                        mode='lines+markers+text',
+                        name=f'{st.session_state.symbol} Movement',
+                        line=dict(color='#ffd700', width=4),
+                        marker=dict(
+                            size=df_forecasts['change'] * 3 + 8,
+                            color=colors,
+                            line=dict(width=2, color='black'),
+                            opacity=0.8
+                        ),
+                        text=[f"{change:+.1f}%" for change in df_forecasts['change_signed']],
+                        textposition="top center",
+                        textfont=dict(size=10, color='black'),
+                        hovertemplate='<b>%{text}</b><br>' +
+                                     'Date: %{x}<br>' +
+                                     'Movement: %{y:.2f}%<br>' +
+                                     'Event: %{customdata[0]}<br>' +
+                                     'Planet: %{customdata[1]}<br>' +
+                                     'Accuracy: %{customdata[2]:.1f}%<br>' +
+                                     'Signal: %{customdata[3]}<extra></extra>',
+                        customdata=list(zip(df_forecasts['event'], 
+                                          df_forecasts['planet'],
+                                          df_forecasts['historical_accuracy'],
+                                          df_forecasts['signal']))
+                    ))
+                    
+                    fig.update_layout(
+                        title=f"Daily Planetary Transit Impact - {st.session_state.symbol} ({platform.month_names[st.session_state.month]} {st.session_state.year})",
+                        xaxis_title="Date",
+                        yaxis_title="Expected Change (%)",
+                        template="plotly_dark",
+                        showlegend=True,
+                        height=700,
+                        hovermode='x unified',
+                        font=dict(color="white")
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                except Exception as e:
+                    st.error(f"Error creating daily chart: {str(e)}")
+            
+            else:  # Intraday Chart
+                st.markdown("#### ⏰ Intraday Planetary Transit Chart")
+                
+                # Date selector for intraday chart
+                selected_date = st.date_input(
+                    "Select Date for Intraday Analysis:",
+                    value=datetime.date.today(),
+                    help="Choose a specific date to see hourly planetary transits"
                 )
                 
-                # Enhanced interactive chart
-                fig = go.Figure()
-                
-                # Main price movement line with dynamic colors
-                colors = ['#f44336' if s == 'bearish' else '#4caf50' if s == 'bullish' else '#ff9800' 
-                         for s in df_forecasts['sentiment']]
-                
-                fig.add_trace(go.Scatter(
-                    x=df_forecasts['date'],
-                    y=df_forecasts['change_signed'],
-                    mode='lines+markers+text',
-                    name=f'{st.session_state.symbol} Movement',
-                    line=dict(color='#ffd700', width=4),
-                    marker=dict(
-                        size=df_forecasts['change'] * 3 + 8,
-                        color=colors,
-                        line=dict(width=2, color='black'),
-                        opacity=0.8
-                    ),
-                    text=[f"{change:+.1f}%" for change in df_forecasts['change_signed']],
-                    textposition="top center",
-                    textfont=dict(size=10, color='black'),
-                    hovertemplate='<b>%{text}</b><br>' +
-                                 'Date: %{x}<br>' +
-                                 'Movement: %{y:.2f}%<br>' +
-                                 'Event: %{customdata[0]}<br>' +
-                                 'Planet: %{customdata[1]}<br>' +
-                                 'Accuracy: %{customdata[2]:.1f}%<br>' +
-                                 'Signal: %{customdata[3]}<extra></extra>',
-                    customdata=list(zip(df_forecasts['event'], 
-                                      df_forecasts['planet'],
-                                      df_forecasts['historical_accuracy'],
-                                      df_forecasts['signal']))
-                ))
-                
-                fig.update_layout(
-                    title=f"Planetary Transit Impact Analysis - {st.session_state.symbol} ({platform.month_names[st.session_state.month]} {st.session_state.year})",
-                    xaxis_title="Date",
-                    yaxis_title="Expected Change (%)",
-                    template="plotly_dark",
-                    showlegend=True,
-                    height=700,
-                    hovermode='x unified',
-                    font=dict(color="white")
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
-                
-            except Exception as e:
-                st.error(f"Error creating chart: {str(e)}")
+                # Generate intraday data based on planetary transits
+                try:
+                    intraday_data = platform.generate_intraday_transit_data(
+                        st.session_state.symbol, 
+                        selected_date
+                    )
+                    
+                    if intraday_data:
+                        # Create intraday DataFrame
+                        df_intraday = pd.DataFrame(intraday_data)
+                        df_intraday['datetime'] = pd.to_datetime(df_intraday['datetime'])
+                        
+                        # Create intraday chart
+                        fig_intraday = go.Figure()
+                        
+                        # Main intraday line
+                        colors_intraday = ['#f44336' if s == 'bearish' else '#4caf50' if s == 'bullish' else '#ff9800' 
+                                         for s in df_intraday['sentiment']]
+                        
+                        fig_intraday.add_trace(go.Scatter(
+                            x=df_intraday['datetime'],
+                            y=df_intraday['price_change'],
+                            mode='lines+markers',
+                            name=f'{st.session_state.symbol} Intraday',
+                            line=dict(color='#ffd700', width=3),
+                            marker=dict(
+                                size=10,
+                                color=colors_intraday,
+                                line=dict(width=2, color='black'),
+                                opacity=0.8
+                            ),
+                            hovertemplate='<b>%{y:+.2f}%</b><br>' +
+                                         'Time: %{x}<br>' +
+                                         'Transit: %{customdata[0]}<br>' +
+                                         'Planet: %{customdata[1]}<br>' +
+                                         'Signal: %{customdata[2]}<extra></extra>',
+                            customdata=list(zip(df_intraday['transit_type'], 
+                                              df_intraday['planet'],
+                                              df_intraday['signal']))
+                        ))
+                        
+                        # Add planetary transit annotations
+                        for _, row in df_intraday.iterrows():
+                            if row['is_major_transit']:
+                                fig_intraday.add_annotation(
+                                    x=row['datetime'],
+                                    y=row['price_change'],
+                                    text=f"<b>{row['planet']}</b><br>{row['transit_type']}",
+                                    showarrow=True,
+                                    arrowhead=2,
+                                    arrowsize=1,
+                                    arrowwidth=2,
+                                    arrowcolor="#ffd700",
+                                    font=dict(size=10, color="white"),
+                                    bgcolor="rgba(0, 0, 0, 0.8)",
+                                    bordercolor="white",
+                                    borderwidth=1,
+                                    ax=0,
+                                    ay=-40 if row['price_change'] > 0 else 40
+                                )
+                        
+                        # Add transit time markers
+                        transit_times = df_intraday[df_intraday['is_major_transit']]
+                        if not transit_times.empty:
+                            fig_intraday.add_trace(go.Scatter(
+                                x=transit_times['datetime'],
+                                y=transit_times['price_change'],
+                                mode='markers',
+                                name='Major Transits',
+                                marker=dict(
+                                    size=15,
+                                    color='gold',
+                                    symbol='star',
+                                    line=dict(width=2, color='black')
+                                ),
+                                showlegend=True
+                            ))
+                        
+                        # Add market session indicators
+                        session_times = [
+                            {'name': 'Opening Bell', 'time': '09:00', 'color': '#00ff00'},
+                            {'name': 'Mid Morning', 'time': '10:30', 'color': '#ffff00'},
+                            {'name': 'Lunch Hour', 'time': '12:00', 'color': '#ff9800'},
+                            {'name': 'Power Hour', 'time': '15:00', 'color': '#ff0000'},
+                            {'name': 'Closing Bell', 'time': '16:00', 'color': '#800080'}
+                        ]
+                        
+                        for session in session_times:
+                            session_datetime = datetime.datetime.combine(selected_date, 
+                                                                       datetime.time.fromisoformat(session['time']))
+                            fig_intraday.add_vline(
+                                x=session_datetime,
+                                line_dash="dash",
+                                line_color=session['color'],
+                                annotation_text=session['name'],
+                                annotation_position="top"
+                            )
+                        
+                        fig_intraday.update_layout(
+                            title=f"Intraday Planetary Transits - {st.session_state.symbol} ({selected_date})",
+                            xaxis_title="Time (Market Hours: 09:00 - 16:00)",
+                            yaxis_title="Price Change (%)",
+                            template="plotly_dark",
+                            showlegend=True,
+                            height=700,
+                            hovermode='x unified',
+                            font=dict(color="white"),
+                            xaxis=dict(
+                                tickformat='%H:%M',
+                                dtick=3600000  # 1 hour in milliseconds
+                            )
+                        )
+                        
+                        st.plotly_chart(fig_intraday, use_container_width=True)
+                        
+                        # Intraday transit summary
+                        st.markdown("### 📋 Intraday Transit Summary")
+                        
+                        major_transits = df_intraday[df_intraday['is_major_transit']]
+                        if not major_transits.empty:
+                            for _, transit in major_transits.iterrows():
+                                time_str = transit['datetime'].strftime('%H:%M')
+                                
+                                if transit['sentiment'] == 'bullish':
+                                    st.success(f"🕐 **{time_str}** - {transit['planet']} {transit['transit_type']} - **{transit['signal']}** ({transit['price_change']:+.2f}%)")
+                                elif transit['sentiment'] == 'bearish':
+                                    st.error(f"🕐 **{time_str}** - {transit['planet']} {transit['transit_type']} - **{transit['signal']}** ({transit['price_change']:+.2f}%)")
+                                else:
+                                    st.warning(f"🕐 **{time_str}** - {transit['planet']} {transit['transit_type']} - **{transit['signal']}** ({transit['price_change']:+.2f}%)")
+                        
+                        # Transit timing table
+                        st.markdown("### 📋 Transit Timing Table")
+                        transit_table = major_transits[['datetime', 'planet', 'transit_type', 'signal', 'price_change']].copy()
+                        transit_table['Time'] = transit_table['datetime'].dt.strftime('%H:%M')
+                        transit_table['Change %'] = transit_table['price_change'].apply(lambda x: f"{x:+.2f}%")
+                        
+                        display_table = transit_table[['Time', 'planet', 'transit_type', 'signal', 'Change %']]
+                        display_table.columns = ['Time', 'Planet', 'Transit', 'Signal', 'Impact']
+                        
+                        st.dataframe(display_table, use_container_width=True)
+                        
+                        # Add volume subplot for intraday
+                        if 'volume_impact' in df_intraday.columns:
+                            st.markdown("### 📊 Intraday Volume Analysis")
+                            
+                            fig_volume = go.Figure()
+                            
+                            fig_volume.add_trace(go.Bar(
+                                x=df_intraday['datetime'],
+                                y=df_intraday['volume_impact'],
+                                name='Volume Impact',
+                                marker_color=['#4caf50' if s == 'bullish' else '#f44336' if s == 'bearish' else '#ff9800' 
+                                            for s in df_intraday['sentiment']],
+                                opacity=0.7
+                            ))
+                            
+                            fig_volume.update_layout(
+                                title="Volume Impact During Planetary Transits",
+                                xaxis_title="Time",
+                                yaxis_title="Volume Impact",
+                                template="plotly_dark",
+                                height=300,
+                                font=dict(color="white")
+                            )
+                            
+                            st.plotly_chart(fig_volume, use_container_width=True)
+                        
+                        # Enhanced transit analysis
+                        st.markdown("### 🔮 Transit Analysis Summary")
+                        
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        total_major_transits = len(major_transits)
+                        bullish_transits = len(major_transits[major_transits['sentiment'] == 'bullish'])
+                        bearish_transits = len(major_transits[major_transits['sentiment'] == 'bearish'])
+                        max_impact = df_intraday['price_change'].abs().max()
+                        
+                        with col1:
+                            st.metric("🌟 Major Transits", total_major_transits)
+                        with col2:
+                            st.metric("📈 Bullish", bullish_transits)
+                        with col3:
+                            st.metric("📉 Bearish", bearish_transits)
+                        with col4:
+                            st.metric("⚡ Max Impact", f"{max_impact:.2f}%")
+                        
+                        # Best trading times
+                        st.markdown("### ⏰ Optimal Trading Times")
+                        
+                        high_impact_times = major_transits[major_transits['price_change'].abs() > 1.0]
+                        if not high_impact_times.empty:
+                            st.info("🎯 **High Impact Periods** (>1% expected movement):")
+                            for _, period in high_impact_times.iterrows():
+                                time_str = period['datetime'].strftime('%H:%M')
+                                impact_str = f"{period['price_change']:+.2f}%"
+                                
+                                if period['sentiment'] == 'bullish':
+                                    st.success(f"**{time_str}** - {period['planet']} {period['transit_type']} - Expected: {impact_str}")
+                                else:
+                                    st.error(f"**{time_str}** - {period['planet']} {period['transit_type']} - Expected: {impact_str}")
+                        
+                        # Export intraday data
+                        if st.button("📥 Export Intraday Data"):
+                            csv_data = df_intraday.to_csv(index=False)
+                            st.download_button(
+                                label="📥 Download Intraday CSV",
+                                data=csv_data,
+                                file_name=f"intraday_{st.session_state.symbol}_{selected_date}.csv",
+                                mime="text/csv"
+                            )
+                        
+                    else:
+                        st.warning("No significant planetary transits found for the selected date.")
+                        
+                except Exception as e:
+                    st.error(f"Error creating intraday chart: {str(e)}")
+                    
+                    # Fallback intraday demo data
+                    st.info("Showing demo intraday data...")
+                    demo_times = pd.date_range(
+                        start=f"{selected_date} 09:00:00",
+                        end=f"{selected_date} 16:00:00",
+                        freq='30T'
+                    )
+                    
+                    demo_data = []
+                    planets = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn']
+                    transits = ['Conjunction', 'Trine', 'Square', 'Sextile', 'Opposition']
+                    
+                    for i, time in enumerate(demo_times):
+                        change = random.uniform(-2, 2)
+                        sentiment = 'bullish' if change > 0.5 else 'bearish' if change < -0.5 else 'neutral'
+                        
+                        demo_data.append({
+                            'datetime': time,
+                            'price_change': change,
+                            'sentiment': sentiment,
+                            'planet': planets[i % len(planets)],
+                            'transit_type': transits[i % len(transits)],
+                            'signal': 'LONG' if sentiment == 'bullish' else 'SHORT' if sentiment == 'bearish' else 'HOLD',
+                            'is_major_transit': i % 4 == 0  # Every 4th point is major
+                        })
+                    
+                    df_demo = pd.DataFrame(demo_data)
+                    
+                    # Create demo chart
+                    fig_demo = go.Figure()
+                    
+                    colors_demo = ['#f44336' if s == 'bearish' else '#4caf50' if s == 'bullish' else '#ff9800' 
+                                 for s in df_demo['sentiment']]
+                    
+                    fig_demo.add_trace(go.Scatter(
+                        x=df_demo['datetime'],
+                        y=df_demo['price_change'],
+                        mode='lines+markers',
+                        name=f'{st.session_state.symbol} Demo',
+                        line=dict(color='#ffd700', width=3),
+                        marker=dict(size=8, color=colors_demo, opacity=0.8)
+                    ))
+                    
+                    fig_demo.update_layout(
+                        title=f"Demo Intraday Chart - {st.session_state.symbol} ({selected_date})",
+                        xaxis_title="Time",
+                        yaxis_title="Price Change (%)",
+                        template="plotly_dark",
+                        height=500
+                    )
+                    
+                    st.plotly_chart(fig_demo, use_container_width=True)
         
         with tab5:
             st.markdown(f"## 🌙 Advanced Planetary Transit Analysis")

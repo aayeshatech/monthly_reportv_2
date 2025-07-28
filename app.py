@@ -1831,7 +1831,13 @@ def main():
             
             with col1:
                 st.markdown("### 📅 Birth Chart Details")
-                birth_date = st.date_input("Select Birth Date", value=datetime.date(1990, 1, 1))
+                birth_date = st.date_input(
+                    "Select Birth Date", 
+                    value=datetime.date(1990, 1, 1),
+                    min_value=datetime.date(1900, 1, 1),
+                    max_value=datetime.date(2100, 12, 31),
+                    help="Select any birth date from 1900 to 2100"
+                )
                 birth_time = st.time_input("Select Birth Time", value=datetime.time(12, 0))
                 birth_location = st.text_input("Birth Location", value="Mumbai, India")
                 

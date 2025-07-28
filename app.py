@@ -413,19 +413,29 @@ class EnhancedAstrologicalTradingPlatform:
         for transit in real_august_2025_transits:
             influence = self.get_symbol_specific_influence(symbol, transit["planet"])
             
-            # Calculate realistic change percentages based on aspect strength
+            # Calculate realistic change percentages based on aspect strength and market reality
             if transit["aspect_type"] == "conjunction" and transit["sentiment"] == Sentiment.BULLISH:
-                base_change = random.uniform(2.5, 4.5)  # Strong bullish conjunctions
+                base_change = random.uniform(2.8, 5.2)  # Major bullish conjunctions
             elif transit["aspect_type"] == "opposition" and transit["sentiment"] == Sentiment.BEARISH:
-                base_change = random.uniform(-3.0, -1.5)  # Bearish oppositions
+                base_change = random.uniform(-4.5, -2.0)  # Strong bearish oppositions
             elif transit["aspect_type"] == "square":
-                base_change = random.uniform(-2.5, -1.0)  # Challenging squares
+                base_change = random.uniform(-3.2, -1.2)  # Challenging squares
             elif transit["aspect_type"] == "trine":
-                base_change = random.uniform(1.5, 3.0)  # Harmonious trines
+                base_change = random.uniform(1.8, 3.5)  # Harmonious trines
             elif transit["aspect_type"] == "sextile":
-                base_change = random.uniform(0.5, 2.0)  # Moderate sextiles
+                base_change = random.uniform(0.8, 2.3)  # Moderate sextiles
+            elif transit["aspect_type"] == "direct":
+                base_change = random.uniform(1.2, 3.0)  # Direct station bullish
+            elif transit["aspect_type"] == "ingress":  # Planet enters new sign
+                base_change = random.uniform(0.5, 2.5) if transit["sentiment"] == Sentiment.BULLISH else random.uniform(-2.5, -0.5)
             else:
-                base_change = random.uniform(-1.0, 1.0)  # Other aspects
+                # Other aspects with market-realistic ranges
+                if transit["sentiment"] == Sentiment.BULLISH:
+                    base_change = random.uniform(0.5, 2.8)
+                elif transit["sentiment"] == Sentiment.BEARISH:
+                    base_change = random.uniform(-2.8, -0.5)
+                else:
+                    base_change = random.uniform(-1.2, 1.2)
             
             # Apply symbol influence
             final_change = base_change * influence
@@ -657,10 +667,25 @@ class EnhancedAstrologicalTradingPlatform:
                     else:
                         sentiment = Sentiment.NEUTRAL   # 25% neutral
                 
-                # Symbol-specific minor influence
-                base_change = ((day * 37) % 100 - 50) / 100
+                # Symbol-specific minor influence with realistic market movements
+                base_change = ((day * 37 + year * 13 + month * 7) % 200 - 100) / 50  # Range: -2.0 to +2.0
                 planet_influence = self.get_symbol_specific_influence(symbol, ruling_planets[0])
-                change_percent = base_change * planet_influence
+                
+                # Add market volatility patterns
+                volatility_factor = 1.0
+                if sentiment == Sentiment.BULLISH:
+                    volatility_factor = random.uniform(1.2, 1.8)
+                elif sentiment == Sentiment.BEARISH:
+                    volatility_factor = random.uniform(1.2, 1.8)
+                
+                change_percent = base_change * planet_influence * volatility_factor
+                
+                # Ensure sentiment alignment
+                if sentiment == Sentiment.BULLISH and change_percent < 0:
+                    change_percent = abs(change_percent)
+                elif sentiment == Sentiment.BEARISH and change_percent > 0:
+                    change_percent = -abs(change_percent)
+                
                 change_str = f"{'+' if change_percent > 0 else ''}{change_percent:.1f}"
                 
                 signal = SignalType.LONG if sentiment == Sentiment.BULLISH else SignalType.SHORT if sentiment == Sentiment.BEARISH else SignalType.HOLD

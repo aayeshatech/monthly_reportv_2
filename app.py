@@ -325,85 +325,83 @@ class EnhancedAstrologicalTradingPlatform:
             return []
     
     def create_south_indian_birth_chart(self, birth_chart: BirthChart) -> go.Figure:
-        """Create South Indian style Vedic birth chart - Proper rectangular format"""
+        """Create South Indian style Vedic birth chart"""
         fig = go.Figure()
         
-        # South Indian chart - Proper rectangular grid (3x4 houses layout)
-        # House positions in South Indian traditional format
-        house_positions = {
-            1: (1, 1),    # Top-right (Ascendant)
-            2: (1, 0),    # Right-middle
-            3: (1, -1),   # Bottom-right
-            4: (0, -1),   # Bottom-center
-            5: (-1, -1),  # Bottom-left
-            6: (-1, 0),   # Left-middle
-            7: (-1, 1),   # Top-left
-            8: (0, 1),    # Top-center
-            9: (0.5, 0.5), # Inner top-right
-            10: (0.5, -0.5), # Inner bottom-right
-            11: (-0.5, -0.5), # Inner bottom-left
-            12: (-0.5, 0.5)  # Inner top-left
-        }
+        # South Indian chart is diamond-shaped with 12 houses in specific positions
+        # House positions in South Indian format (clockwise from top)
+        house_positions = [
+            (0, 1),     # House 1 (Ascendant) - Top
+            (-0.7, 0.7), # House 2 - Top Left
+            (-1, 0),     # House 3 - Left
+            (-0.7, -0.7),# House 4 - Bottom Left  
+            (0, -1),     # House 5 - Bottom
+            (0.7, -0.7), # House 6 - Bottom Right
+            (1, 0),      # House 7 - Right
+            (0.7, 0.7),  # House 8 - Top Right
+            (0, 0.5),    # House 9 - Inner Top
+            (-0.5, 0),   # House 10 - Inner Left
+            (0, -0.5),   # House 11 - Inner Bottom
+            (0.5, 0)     # House 12 - Inner Right
+        ]
         
-        # Draw outer rectangle boundary
-        outer_x = [-1.2, 1.2, 1.2, -1.2, -1.2]
-        outer_y = [-1.2, -1.2, 1.2, 1.2, -1.2]
+        # Draw the diamond shape outer boundary
+        diamond_x = [0, -1, 0, 1, 0]
+        diamond_y = [1, 0, -1, 0, 1]
         
         fig.add_trace(go.Scatter(
-            x=outer_x, y=outer_y, mode='lines',
+            x=diamond_x, y=diamond_y, mode='lines',
             line=dict(color='black', width=3),
-            name='Outer Boundary',
+            name='Chart Boundary',
             showlegend=False
         ))
         
-        # Draw grid lines to create 12 houses
-        # Vertical lines
-        for x in [-0.4, 0.4]:
-            fig.add_trace(go.Scatter(
-                x=[x, x], y=[-1.2, 1.2], mode='lines',
-                line=dict(color='black', width=2),
-                showlegend=False
-            ))
+        # Draw inner cross lines
+        # Vertical line
+        fig.add_trace(go.Scatter(
+            x=[0, 0], y=[1, -1], mode='lines',
+            line=dict(color='black', width=2),
+            showlegend=False
+        ))
         
-        # Horizontal lines  
-        for y in [-0.4, 0.4]:
-            fig.add_trace(go.Scatter(
-                x=[-1.2, 1.2], y=[y, y], mode='lines',
-                line=dict(color='black', width=2),
-                showlegend=False
-            ))
+        # Horizontal line  
+        fig.add_trace(go.Scatter(
+            x=[-1, 1], y=[0, 0], mode='lines',
+            line=dict(color='black', width=2),
+            showlegend=False
+        ))
         
-        # Inner rectangle for houses 9-12
-        inner_x = [-0.4, 0.4, 0.4, -0.4, -0.4]
-        inner_y = [-0.4, -0.4, 0.4, 0.4, -0.4]
+        # Diagonal lines for inner divisions
+        fig.add_trace(go.Scatter(
+            x=[-0.5, 0.5], y=[0.5, -0.5], mode='lines',
+            line=dict(color='gray', width=1),
+            showlegend=False
+        ))
         
         fig.add_trace(go.Scatter(
-            x=inner_x, y=inner_y, mode='lines',
-            line=dict(color='gray', width=1.5),
+            x=[-0.5, 0.5], y=[-0.5, 0.5], mode='lines',
+            line=dict(color='gray', width=1),
             showlegend=False
         ))
         
-        # Add house numbers in traditional South Indian positions
-        house_labels = {
-            1: (0.8, 0.8, "1"), 2: (0.8, 0, "2"), 3: (0.8, -0.8, "3"),
-            4: (0, -0.8, "4"), 5: (-0.8, -0.8, "5"), 6: (-0.8, 0, "6"),
-            7: (-0.8, 0.8, "7"), 8: (0, 0.8, "8"), 
-            9: (0.2, 0.2, "9"), 10: (0.2, -0.2, "10"), 
-            11: (-0.2, -0.2, "11"), 12: (-0.2, 0.2, "12")
-        }
+        # Add house numbers in South Indian style
+        house_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
         
-        for house_num, (x, y, label) in house_labels.items():
+        for i, (x, y) in enumerate(house_positions):
+            # Adjust position based on ascendant
+            adjusted_house = (i + int(birth_chart.ascendant / 30)) % 12 + 1
+            
             fig.add_annotation(
                 x=x, y=y,
-                text=f"<b>{label}</b>",
+                text=f"<b>{house_labels[i]}</b>",
                 showarrow=False,
-                font=dict(size=12, color="blue", family="Arial Black"),
-                bgcolor="rgba(255,255,255,0.9)",
+                font=dict(size=14, color="blue", family="Arial Black"),
+                bgcolor="rgba(255,255,255,0.8)",
                 bordercolor="blue",
                 borderwidth=1
             )
         
-        # Planetary symbols and information
+        # Add planetary positions using Vedic symbols
         planet_symbols = {
             'Sun': '☉', 'Moon': '☽', 'Mars': '♂', 'Mercury': '☿',
             'Jupiter': '♃', 'Venus': '♀', 'Saturn': '♄', 
@@ -411,71 +409,39 @@ class EnhancedAstrologicalTradingPlatform:
         }
         
         planet_colors = {
-            'Sun': '#FF6B35', 'Moon': '#A8DADC', 'Mars': '#E63946',
-            'Mercury': '#2A9D8F', 'Jupiter': '#F77F00', 'Venus': '#F72585',
-            'Saturn': '#8B5A3C', 'Rahu': '#6A4C93', 'Ketu': '#9D4EDD'
+            'Sun': '#FFD700', 'Moon': '#C0C0C0', 'Mars': '#FF4500',
+            'Mercury': '#32CD32', 'Jupiter': '#FFD700', 'Venus': '#FF69B4',
+            'Saturn': '#8B4513', 'Rahu': '#4B0082', 'Ketu': '#800080'
         }
         
-        # Check for retrograde planets (simplified - normally would calculate from ephemeris)
-        retrograde_planets = ['Saturn', 'Mercury']  # Example retrograde planets
-        
-        # Place planets in houses with enhanced information
-        planet_count_per_house = {}
+        # Calculate which house each planet is in
         for planet, degree in birth_chart.planetary_positions.items():
-            # Calculate house based on degree (simplified)
-            house_num = int(degree / 30) + 1
-            if house_num > 12:
-                house_num = house_num % 12
-            if house_num == 0:
-                house_num = 12
-                
-            # Count planets per house for spacing
-            if house_num not in planet_count_per_house:
-                planet_count_per_house[house_num] = 0
+            house_num = int((degree - birth_chart.ascendant) // 30) % 12
             
-            # Get base position for house
+            # Get position for this house
             base_x, base_y = house_positions[house_num]
             
-            # Offset for multiple planets in same house
-            offset_x = (planet_count_per_house[house_num] % 2) * 0.15 - 0.075
-            offset_y = (planet_count_per_house[house_num] // 2) * 0.15 - 0.075
-            
-            planet_count_per_house[house_num] += 1
+            # Add small random offset so planets don't overlap
+            offset_x = random.uniform(-0.1, 0.1)
+            offset_y = random.uniform(-0.1, 0.1)
             
             symbol = planet_symbols.get(planet, '⚫')
             color = planet_colors.get(planet, 'black')
-            
-            # Get nakshatra info
-            nakshatra, lord = self.get_nakshatra_info(degree)
-            
-            # Check if retrograde
-            is_retrograde = planet in retrograde_planets
-            
-            # Create planet marker with enhanced styling
-            marker_size = 25 if is_retrograde else 20
-            marker_symbol = 'diamond' if is_retrograde else 'circle'
-            line_color = 'red' if is_retrograde else 'black'
-            line_width = 3 if is_retrograde else 2
             
             fig.add_trace(go.Scatter(
                 x=[base_x + offset_x], 
                 y=[base_y + offset_y],
                 mode='markers+text',
                 marker=dict(
-                    size=marker_size,
+                    size=20,
                     color=color,
-                    line=dict(width=line_width, color=line_color),
-                    symbol=marker_symbol,
-                    opacity=0.9
+                    line=dict(width=2, color='black'),
+                    symbol='circle'
                 ),
                 text=[symbol],
-                textfont=dict(size=14, color='white', family="Arial Black"),
-                name=f"{planet}{'(R)' if is_retrograde else ''}",
-                hovertemplate=f"<b>{planet}{'(Retrograde)' if is_retrograde else ''}</b><br>" +
-                             f"Degree: {degree:.1f}°<br>" +
-                             f"House: {house_num}<br>" +
-                             f"Nakshatra: {nakshatra}<br>" +
-                             f"Lord: {lord}<extra></extra>"
+                textfont=dict(size=16, color='white', family="Arial Black"),
+                name=f"{planet}",
+                hovertemplate=f"<b>{planet}</b><br>Degree: {degree:.1f}°<br>House: {house_num + 1}<extra></extra>"
             ))
         
         # Update layout for South Indian chart
@@ -500,7 +466,7 @@ class EnhancedAstrologicalTradingPlatform:
                 zeroline=False, 
                 showticklabels=False
             ),
-            width=700,
+            width=600,
             height=600,
             template="plotly_white",
             showlegend=True,
@@ -509,17 +475,8 @@ class EnhancedAstrologicalTradingPlatform:
                 yanchor="top",
                 y=1,
                 xanchor="left",
-                x=1.05,
-                font=dict(size=10)
-            ),
-            annotations=[
-                dict(
-                    text="(R) = Retrograde Planet",
-                    x=1.3, y=-1.3,
-                    showarrow=False,
-                    font=dict(size=10, color="red")
-                )
-            ]
+                x=1.02
+            )
         )
         
         return fig
@@ -1913,17 +1870,15 @@ def main():
                 ### 📚 How to Use Birth Chart Analysis:
                 
                 1. **Generate Birth Chart**: Enter your birth date, time, and location
-                2. **Fetch Transit Data**: Select analysis date and fetch current planetary positions
-                3. **Analyze Market Impact**: Review how current transits affect different markets
-                4. **Export Data**: Download complete analysis for your records
+                2. **Choose Chart Style**: Select South Indian (Diamond) or North Indian (Square) format
+                3. **Fetch Transit Data**: Select analysis date and fetch current planetary positions
+                4. **Analyze Market Impact**: Review how current transits affect different markets
                 
-                **Features:**
-                - ✅ Vedic birth chart with house positions
-                - ✅ Real-time planetary transits with degrees
-                - ✅ Nakshatra and sub-lord calculations
-                - ✅ Market impact analysis for 7 major markets
-                - ✅ Professional transit timing
-                - ✅ Exportable data tables
+                **New Features:**
+                - ✅ South Indian birth chart format (Traditional diamond shape)
+                - ✅ North Indian birth chart format (Circular with houses)
+                - ✅ Real-time planetary transits with accurate degrees
+                - ✅ Natural language query processing
                 """)
         
         with tab2:

@@ -10,6 +10,8 @@ from enum import Enum
 import io
 import numpy as np
 import random
+import requests
+import json
 
 st.set_page_config(
     page_title="🌟 Advanced Astrological Trading Platform",
@@ -60,6 +62,28 @@ class PivotPoint:
     pivot_type: str
     expected_move: float
     confidence: float
+
+@dataclass
+class BirthChart:
+    date: str
+    time: str
+    location: str
+    planetary_positions: Dict[str, float]
+    house_cusps: List[float]
+    ascendant: float
+
+@dataclass
+class Transit:
+    planet: str
+    degree: float
+    nakshatra: str
+    nakshatra_lord: str
+    sub_lord: str
+    house: int
+    aspect_type: str
+    time: str
+    market_impact: Dict[str, str]  # Market -> Bullish/Bearish
+    strength: str
 
 @dataclass
 class Forecast:
@@ -160,6 +184,53 @@ class EnhancedAstrologicalTradingPlatform:
             'S&P 500': ['jupiter', 'sun'],
             'EURUSD': ['venus', 'jupiter'],
             'GBPUSD': ['mercury', 'venus']
+        }
+        
+        # Nakshatra system
+        self.nakshatras = [
+            {'name': 'Ashwini', 'lord': 'Ketu', 'degree_start': 0.0, 'degree_end': 13.33},
+            {'name': 'Bharani', 'lord': 'Venus', 'degree_start': 13.33, 'degree_end': 26.67},
+            {'name': 'Krittika', 'lord': 'Sun', 'degree_start': 26.67, 'degree_end': 40.0},
+            {'name': 'Rohini', 'lord': 'Moon', 'degree_start': 40.0, 'degree_end': 53.33},
+            {'name': 'Mrigashirsha', 'lord': 'Mars', 'degree_start': 53.33, 'degree_end': 66.67},
+            {'name': 'Ardra', 'lord': 'Rahu', 'degree_start': 66.67, 'degree_end': 80.0},
+            {'name': 'Punarvasu', 'lord': 'Jupiter', 'degree_start': 80.0, 'degree_end': 93.33},
+            {'name': 'Pushya', 'lord': 'Saturn', 'degree_start': 93.33, 'degree_end': 106.67},
+            {'name': 'Ashlesha', 'lord': 'Mercury', 'degree_start': 106.67, 'degree_end': 120.0},
+            {'name': 'Magha', 'lord': 'Ketu', 'degree_start': 120.0, 'degree_end': 133.33},
+            {'name': 'Purva Phalguni', 'lord': 'Venus', 'degree_start': 133.33, 'degree_end': 146.67},
+            {'name': 'Uttara Phalguni', 'lord': 'Sun', 'degree_start': 146.67, 'degree_end': 160.0},
+            {'name': 'Hasta', 'lord': 'Moon', 'degree_start': 160.0, 'degree_end': 173.33},
+            {'name': 'Chitra', 'lord': 'Mars', 'degree_start': 173.33, 'degree_end': 186.67},
+            {'name': 'Swati', 'lord': 'Rahu', 'degree_start': 186.67, 'degree_end': 200.0},
+            {'name': 'Vishakha', 'lord': 'Jupiter', 'degree_start': 200.0, 'degree_end': 213.33},
+            {'name': 'Anuradha', 'lord': 'Saturn', 'degree_start': 213.33, 'degree_end': 226.67},
+            {'name': 'Jyeshtha', 'lord': 'Mercury', 'degree_start': 226.67, 'degree_end': 240.0},
+            {'name': 'Mula', 'lord': 'Ketu', 'degree_start': 240.0, 'degree_end': 253.33},
+            {'name': 'Purva Ashadha', 'lord': 'Venus', 'degree_start': 253.33, 'degree_end': 266.67},
+            {'name': 'Uttara Ashadha', 'lord': 'Sun', 'degree_start': 266.67, 'degree_end': 280.0},
+            {'name': 'Shravana', 'lord': 'Moon', 'degree_start': 280.0, 'degree_end': 293.33},
+            {'name': 'Dhanishta', 'lord': 'Mars', 'degree_start': 293.33, 'degree_end': 306.67},
+            {'name': 'Shatabhisha', 'lord': 'Rahu', 'degree_start': 306.67, 'degree_end': 320.0},
+            {'name': 'Purva Bhadrapada', 'lord': 'Jupiter', 'degree_start': 320.0, 'degree_end': 333.33},
+            {'name': 'Uttara Bhadrapada', 'lord': 'Saturn', 'degree_start': 333.33, 'degree_end': 346.67},
+            {'name': 'Revati', 'lord': 'Mercury', 'degree_start': 346.67, 'degree_end': 360.0}
+        ]
+        
+        # Sub-lord system (Vimshottari Dasha)
+        self.sub_lords = ['Ketu', 'Venus', 'Sun', 'Moon', 'Mars', 'Rahu', 'Jupiter', 'Saturn', 'Mercury']
+        
+        # Market impact based on planetary combinations
+        self.planetary_market_impact = {
+            'Sun': {'NIFTY': 'Strong Bullish', 'BANKNIFTY': 'Bullish', 'GOLD': 'Very Bullish'},
+            'Moon': {'NIFTY': 'Volatile', 'SILVER': 'Very Bullish', 'BANKNIFTY': 'Neutral'},
+            'Mars': {'CRUDE': 'Very Bullish', 'NIFTY': 'Bearish', 'DOW JONES': 'Volatile'},
+            'Mercury': {'NIFTY': 'Bullish', 'BANKNIFTY': 'Strong Bullish', 'BTC': 'Bullish'},
+            'Jupiter': {'NIFTY': 'Very Bullish', 'BANKNIFTY': 'Very Bullish', 'GOLD': 'Bullish'},
+            'Venus': {'GOLD': 'Bullish', 'SILVER': 'Bullish', 'NIFTY': 'Moderate Bullish'},
+            'Saturn': {'NIFTY': 'Bearish', 'BANKNIFTY': 'Bearish', 'CRUDE': 'Bearish'},
+            'Rahu': {'BTC': 'Very Bullish', 'NIFTY': 'Volatile', 'CRUDE': 'Bullish'},
+            'Ketu': {'GOLD': 'Bearish', 'NIFTY': 'Bearish', 'BTC': 'Volatile'}
         }
 
     def get_symbol_specific_influence(self, symbol: str, planet: str) -> float:
@@ -577,8 +648,10 @@ class EnhancedAstrologicalTradingPlatform:
     def generate_enhanced_monthly_forecast(self, symbol: str, year: int, month: int) -> List[Forecast]:
         forecasts = []
         
-        # Get real astrological transits for August 2025
-        if year == 2025 and month == 7:  # August (0-indexed)
+        # Get real astrological transits for July and August 2025
+        if year == 2025 and month == 6:  # July (0-indexed)
+            symbol_transits = self.generate_real_astrological_transits(symbol, year, month)
+        elif year == 2025 and month == 7:  # August (0-indexed)
             symbol_transits = self.generate_real_astrological_transits(symbol, year, month)
         else:
             # Fallback to generated transits for other months
@@ -901,7 +974,7 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
         st.warning("➡️ **NEUTRAL** - Mixed or weak signals")
         st.info("**Minor** - No significant planetary events")
     
-    # Quick stats
+    # Quick stats with market reality check
     st.markdown("### 📊 Monthly Trading Summary")
     bullish_days = len([f for f in forecasts if f.sentiment == Sentiment.BULLISH])
     bearish_days = len([f for f in forecasts if f.sentiment == Sentiment.BEARISH])
@@ -917,6 +990,29 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
         st.metric("🟢 Buy Signals", buy_signals)
     with summary_cols[3]:
         st.metric("🔴 Sell Signals", sell_signals)
+    
+    # Market Reality Check for July 2025
+    if month_name == "July" and year == 2025:
+        st.markdown("---")
+        st.warning("""
+        ### ⚠️ Market Reality Check - July 2025
+        **Actual Market Movement:** Gold fell heavily from 3440 to 3320 during July 23-25, 2025 (-3.5% drop)
+        
+        **Key Bearish Astrological Events:**
+        - **July 22**: Venus opposes Pluto - Financial transformation pressure
+        - **July 23**: Mars opposes Neptune - Major confusion and selling pressure  
+        - **July 24**: Sun square Uranus - Sudden disruptions and panic selling
+        - **July 25**: Mercury Rx square Jupiter - Overconfidence collapse
+        
+        The updated calendar now shows **SHORT signals** for July 23-25 based on these major bearish transits.
+        """)
+    
+    # General disclaimer
+    st.info("""
+    **Trading Disclaimer:** Astrological analysis should be used as one factor among many in trading decisions. 
+    Always combine with technical analysis, fundamental analysis, and proper risk management.
+    """)
+
 
 def main():
     if 'platform' not in st.session_state:

@@ -265,6 +265,36 @@ class EnhancedAstrologicalTradingPlatform:
                     "impact_strength": "Very Strong", "historical_accuracy": 82.7
                 }
             ],
+            6: [  # July (index 6 for July)
+                {
+                    "date": 5, "planet": "Venus", "transit_type": "aspect", "zodiac_sign": "leo",
+                    "aspect_planet": "Jupiter", "aspect_type": "trine", "degree": 120.0,
+                    "sentiment": Sentiment.BULLISH, "change": "+2.8", "retrograde": False,
+                    "sectors": {"banking": 3.2, "pharma": 2.5, "fmcg": 2.1}, "signal": SignalType.LONG,
+                    "impact_strength": "Strong", "historical_accuracy": 81.2
+                },
+                {
+                    "date": 12, "planet": "Mercury", "transit_type": "retrograde", "zodiac_sign": "leo",
+                    "aspect_planet": "", "aspect_type": "retrograde", "degree": 20.0,
+                    "sentiment": Sentiment.BEARISH, "change": "-2.3", "retrograde": True,
+                    "sectors": {"it": -2.8, "banking": -1.9, "telecom": -2.4}, "signal": SignalType.SHORT,
+                    "impact_strength": "Very Strong", "historical_accuracy": 84.7
+                },
+                {
+                    "date": 18, "planet": "Mars", "transit_type": "aspect", "zodiac_sign": "virgo",
+                    "aspect_planet": "Saturn", "aspect_type": "square", "degree": 90.0,
+                    "sentiment": Sentiment.BEARISH, "change": "-1.9", "retrograde": False,
+                    "sectors": {"auto": -2.3, "metals": -1.8, "energy": -1.4}, "signal": SignalType.SHORT,
+                    "impact_strength": "Moderate", "historical_accuracy": 73.5
+                },
+                {
+                    "date": 25, "planet": "Jupiter", "transit_type": "aspect", "zodiac_sign": "gemini",
+                    "aspect_planet": "Neptune", "aspect_type": "sextile", "degree": 60.0,
+                    "sentiment": Sentiment.BULLISH, "change": "+2.1", "retrograde": False,
+                    "sectors": {"pharma": 2.8, "it": 2.0, "banking": 1.7}, "signal": SignalType.LONG,
+                    "impact_strength": "Strong", "historical_accuracy": 77.9
+                }
+            ],
             7: [  # August
                 {
                     "date": 2, "planet": "Mercury", "transit_type": "aspect", "zodiac_sign": "virgo",

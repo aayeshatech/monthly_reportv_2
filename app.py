@@ -398,8 +398,8 @@ class EnhancedAstrologicalTradingPlatform:
         )
         
         return fig
-    
-    def get_symbol_specific_influence(self, symbol: str, planet: str) -> float:
+
+def render_front_page():
         """Calculate symbol-specific planetary influence multiplier"""
         ruling_planets = self.symbol_planetary_rulers.get(symbol, ['jupiter', 'saturn'])
         
@@ -1185,8 +1185,6 @@ class EnhancedAstrologicalTradingPlatform:
             template="plotly_white"
         )
         
-        return fig
-
 def render_front_page():
     st.markdown('# 🌟 Advanced Astrological Trading Platform')
     
@@ -1200,17 +1198,18 @@ def render_front_page():
     """)
     
     # Feature Cards using columns
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     
     features = [
-        ("📅", "Astro Calendar", "Daily planetary transits, retrograde periods, and precise aspect timing with sector impacts"),
-        ("📊", "Stock Analysis", "Comprehensive symbol-specific analysis, global correlations, and sector impact forecasts"),
-        ("📈", "Astro Graph", "Interactive charts with pivot points, support/resistance levels, and price projections"),
-        ("🌙", "Transit Analysis", "Advanced planetary transit impacts on specific symbols and market performance")
+        ("🎯", "Birth Chart", "Professional Vedic chart with live transit analysis and market impact"),
+        ("📅", "Astro Calendar", "Daily planetary transits, retrograde periods, and precise aspect timing"),
+        ("📊", "Stock Analysis", "Comprehensive symbol-specific analysis and sector impact forecasts"),
+        ("📈", "Astro Graph", "Interactive charts with pivot points and price projections"),
+        ("🌙", "Transit Analysis", "Advanced planetary transit impacts on market performance")
     ]
     
     for i, (icon, title, desc) in enumerate(features):
-        with [col1, col2, col3, col4][i]:
+        with [col1, col2, col3, col4, col5][i]:
             st.markdown(f"### {icon} {title}")
             st.markdown(desc)
     
@@ -1471,7 +1470,7 @@ def main():
             with col2:
                 st.markdown("### 🕐 Transit Analysis Date")
                 transit_date = st.date_input("Select Analysis Date", value=datetime.date.today())
-                analysis_time = st.time_input("Analysis Time", value=datetime.time.now())
+                analysis_time = st.time_input("Analysis Time", value=datetime.datetime.now().time())
                 
                 if st.button("📡 Fetch Live Transit Data", type="secondary"):
                     # Fetch current transits

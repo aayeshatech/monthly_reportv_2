@@ -724,6 +724,7 @@ def main():
             st.markdown(f"#### 📅 Date-wise Planetary Transit Impact Analysis")
             
             # Show ALL forecasts for the selected month, not just significant ones
+            for forecast in forecasts:
                 transit = forecast.detailed_transit
                 
                 # Determine row background color based on impact strength

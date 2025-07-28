@@ -274,10 +274,12 @@ class EnhancedAstrologicalTradingPlatform:
             # Generate sector impacts
             sector_impacts = self.get_symbol_sector_impact(symbol, sentiment, influence)
             
-            # Determine signal
-            if abs(final_change) > 2.0 and accuracy > 75:
+            # Determine signal (more aggressive)
+            if abs(final_change) > 1.5 and accuracy > 70:
                 signal = SignalType.LONG if final_change > 0 else SignalType.SHORT
-            elif abs(final_change) > 1.0:
+            elif abs(final_change) > 0.8:
+                signal = SignalType.LONG if final_change > 0 else SignalType.SHORT
+            elif abs(final_change) > 0.3:
                 signal = SignalType.LONG if final_change > 0 else SignalType.SHORT
             else:
                 signal = SignalType.HOLD
@@ -426,10 +428,12 @@ class EnhancedAstrologicalTradingPlatform:
             # Calculate sector impacts based on transit type and symbol
             transit["sectors"] = self.get_real_sector_impact(symbol, transit, influence)
             
-            # Determine signal based on change and accuracy
-            if abs(final_change) > 2.0 and transit["historical_accuracy"] > 75:
+            # Determine signal based on change and accuracy (more aggressive)
+            if abs(final_change) > 1.5 and transit["historical_accuracy"] > 70:
                 transit["signal"] = SignalType.LONG if final_change > 0 else SignalType.SHORT
-            elif abs(final_change) > 1.0:
+            elif abs(final_change) > 0.8:
+                transit["signal"] = SignalType.LONG if final_change > 0 else SignalType.SHORT
+            elif abs(final_change) > 0.3:
                 transit["signal"] = SignalType.LONG if final_change > 0 else SignalType.SHORT
             else:
                 transit["signal"] = SignalType.HOLD
@@ -618,6 +622,12 @@ class EnhancedAstrologicalTradingPlatform:
                 
                 signal = SignalType.LONG if sentiment == Sentiment.BULLISH else SignalType.SHORT if sentiment == Sentiment.BEARISH else SignalType.HOLD
                 
+                # Make signals more aggressive based on change
+                if abs(change_percent) > 0.5:
+                    signal = SignalType.LONG if change_percent > 0 else SignalType.SHORT
+                elif abs(change_percent) > 0.2:
+                    signal = SignalType.LONG if change_percent > 0 else SignalType.SHORT
+                
                 # Generate minor transit
                 planets = list(self.planets.keys())
                 zodiac_keys = list(self.zodiac_signs.keys())
@@ -728,11 +738,11 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
     st.markdown(f"## 📅 Monthly Planetary Transit Forecast")
     st.markdown(f"### {month_name} {year}")
     
-    # Filter significant transits only
-    significant_forecasts = [f for f in forecasts if abs(float(f.change.replace('+', '').replace('-', ''))) > 1.0][:9]
+    # Filter significant transits only (lower threshold for more signals)
+    significant_forecasts = [f for f in forecasts if abs(float(f.change.replace('+', '').replace('-', ''))) > 0.3][:12]
     
-    # Create 3x3 grid using native Streamlit
-    for row in range(3):
+    # Create dynamic grid using native Streamlit
+    for row in range(4):
         cols = st.columns(3)
         for col in range(3):
             index = row * 3 + col
@@ -741,37 +751,45 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
                 transit = forecast.detailed_transit
                 
                 with cols[col]:
-                    # Create card using expander
+                    # Create dynamic card
                     card_title = f"{forecast.date.replace('2025-', '')} - {forecast.change}%"
                     
                     with st.expander(card_title, expanded=True):
-                        # Determine impact label and display color
+                        # Enhanced impact display with larger fonts
                         if forecast.sentiment == Sentiment.BULLISH:
                             if "strong" in forecast.impact.lower():
-                                st.success("STRONG BULLISH")
+                                st.markdown("## <span style='color: #00ff00; font-size: 24px; font-weight: bold;'>🚀 STRONG BULLISH</span>", unsafe_allow_html=True)
                             else:
-                                st.success("MODERATE BULLISH")
+                                st.markdown("## <span style='color: #4caf50; font-size: 20px; font-weight: bold;'>📈 BULLISH</span>", unsafe_allow_html=True)
                         elif forecast.sentiment == Sentiment.BEARISH:
                             if "strong" in forecast.impact.lower():
-                                st.error("STRONG BEARISH")
+                                st.markdown("## <span style='color: #ff0000; font-size: 24px; font-weight: bold;'>📉 STRONG BEARISH</span>", unsafe_allow_html=True)
                             else:
-                                st.error("MODERATE BEARISH")
+                                st.markdown("## <span style='color: #f44336; font-size: 20px; font-weight: bold;'>📉 BEARISH</span>", unsafe_allow_html=True)
                         else:
-                            st.warning("MODERATE NEUTRAL")
+                            st.markdown("## <span style='color: #ff9800; font-size: 20px; font-weight: bold;'>➡️ NEUTRAL</span>", unsafe_allow_html=True)
                         
-                        # Main content
-                        st.markdown(f"**{transit.planet} {transit.aspect_type} {transit.aspect_planet if transit.aspect_planet else ''}**")
+                        # Enhanced signal display
+                        if forecast.signal == SignalType.LONG:
+                            st.markdown("### <span style='color: #00ff00; font-size: 22px; font-weight: bold;'>🟢 STRONG BUY</span>", unsafe_allow_html=True)
+                        elif forecast.signal == SignalType.SHORT:
+                            st.markdown("### <span style='color: #ff0000; font-size: 22px; font-weight: bold;'>🔴 STRONG SELL</span>", unsafe_allow_html=True)
+                        else:
+                            st.markdown("### <span style='color: #ffa500; font-size: 22px; font-weight: bold;'>🟡 HOLD</span>", unsafe_allow_html=True)
+                        
+                        # Main content with larger fonts
+                        st.markdown(f"### **{transit.planet} {transit.aspect_type} {transit.aspect_planet if transit.aspect_planet else ''}**")
                         
                         zodiac_name = platform.zodiac_signs[transit.zodiac_sign].name if transit.zodiac_sign in platform.zodiac_signs else transit.zodiac_sign.title()
-                        st.markdown(f"_{transit.planet} in {zodiac_name} • {transit.aspect_type.title()}_")
+                        st.markdown(f"**{transit.planet} in {zodiac_name} • {transit.aspect_type.title()}**")
                         
-                        # Expected change
+                        # Expected change with dynamic styling
                         if forecast.sentiment == Sentiment.BULLISH:
-                            st.success(f"Expected Change: {forecast.change}%")
+                            st.markdown(f"## <span style='color: #00ff00; font-size: 20px;'>Expected: {forecast.change}%</span>", unsafe_allow_html=True)
                         elif forecast.sentiment == Sentiment.BEARISH:
-                            st.error(f"Expected Change: {forecast.change}%")
+                            st.markdown(f"## <span style='color: #ff0000; font-size: 20px;'>Expected: {forecast.change}%</span>", unsafe_allow_html=True)
                         else:
-                            st.info(f"Expected Change: {forecast.change}%")
+                            st.markdown(f"## <span style='color: #ffa500; font-size: 20px;'>Expected: {forecast.change}%</span>", unsafe_allow_html=True)
 
 def main():
     if 'platform' not in st.session_state:
@@ -842,24 +860,43 @@ def main():
             forecasts = st.session_state.report
             month_name = platform.month_names[st.session_state.month]
             
-            # Monthly Overview Stats
-            col1, col2, col3, col4 = st.columns(4)
+            # Enhanced Monthly Overview with Large Dynamic Displays
+            st.markdown(f"# 📅 {month_name} {st.session_state.year} - {st.session_state.symbol}")
             
+            # Overall month sentiment
             bullish_count = sum(1 for f in forecasts if f.sentiment == Sentiment.BULLISH)
             bearish_count = sum(1 for f in forecasts if f.sentiment == Sentiment.BEARISH)
             neutral_count = len(forecasts) - bullish_count - bearish_count
             strong_transits = len([f for f in forecasts if 'Strong' in f.impact])
             
-            stats = [
-                (bullish_count, "Bullish Days", "🟢"),
-                (bearish_count, "Bearish Days", "🔴"),
-                (neutral_count, "Neutral Days", "🟡"),
-                (strong_transits, "Strong Transits", "⭐")
-            ]
+            # Large sentiment display
+            if bullish_count > bearish_count:
+                st.markdown("## <span style='color: #00ff00; font-size: 48px; font-weight: bold;'>🚀 BULLISH MONTH AHEAD</span>", unsafe_allow_html=True)
+            elif bearish_count > bullish_count:
+                st.markdown("## <span style='color: #ff0000; font-size: 48px; font-weight: bold;'>📉 BEARISH MONTH AHEAD</span>", unsafe_allow_html=True)
+            else:
+                st.markdown("## <span style='color: #ffa500; font-size: 48px; font-weight: bold;'>➡️ MIXED SIGNALS</span>", unsafe_allow_html=True)
             
-            for i, (count, label, emoji) in enumerate(stats):
-                with [col1, col2, col3, col4][i]:
-                    st.metric(label=f"{emoji} {label}", value=count)
+            # Stats with larger fonts
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.markdown("### 🟢 Bullish Days")
+                st.markdown(f"## <span style='color: #00ff00; font-size: 36px; font-weight: bold;'>{bullish_count}</span>", unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown("### 🔴 Bearish Days")
+                st.markdown(f"## <span style='color: #ff0000; font-size: 36px; font-weight: bold;'>{bearish_count}</span>", unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown("### 🟡 Neutral Days")
+                st.markdown(f"## <span style='color: #ffa500; font-size: 36px; font-weight: bold;'>{neutral_count}</span>", unsafe_allow_html=True)
+            
+            with col4:
+                st.markdown("### ⭐ Strong Transits")
+                st.markdown(f"## <span style='color: #ffd700; font-size: 36px; font-weight: bold;'>{strong_transits}</span>", unsafe_allow_html=True)
+            
+            st.markdown("---")
             
             # Render Astro Calendar Grid
             render_astro_calendar_grid(forecasts, month_name, st.session_state.year, platform)
@@ -887,12 +924,12 @@ def main():
                                     st.error(f"{sector.upper()}: {impact:.1f}%")
         
         with tab2:
-            st.markdown(f"## 📊 {st.session_state.symbol} Analysis")
-            st.markdown(f"### {platform.month_names[st.session_state.month]} {st.session_state.year} Astrological Analysis")
+            st.markdown(f"# 📊 {st.session_state.symbol} Analysis")
+            st.markdown(f"## {platform.month_names[st.session_state.month]} {st.session_state.year} Astrological Analysis")
             
             forecasts = st.session_state.report
             
-            # Enhanced Monthly Summary Stats
+            # Enhanced Monthly Summary Stats with larger displays
             col1, col2, col3, col4 = st.columns(4)
             
             total_bullish_impact = sum(float(f.change.replace('+', '').replace('-', '')) for f in forecasts if f.sentiment == Sentiment.BULLISH)
@@ -900,62 +937,113 @@ def main():
             avg_daily_change = np.mean([float(f.change.replace('+', '').replace('-', '')) for f in forecasts])
             high_accuracy_transits = len([f for f in forecasts if f.detailed_transit.historical_accuracy > 75])
             
-            stats = [
-                (f"+{total_bullish_impact:.1f}%", "Total Bullish Impact", "🟢"),
-                (f"-{total_bearish_impact:.1f}%", "Total Bearish Impact", "🔴"),
-                (f"{avg_daily_change:.1f}%", "Avg Daily Impact", "🟡"),
-                (high_accuracy_transits, "High Accuracy Transits", "⭐")
-            ]
+            with col1:
+                st.markdown("### 🟢 Total Bullish Impact")
+                st.markdown(f"## <span style='color: #00ff00; font-size: 36px; font-weight: bold;'>+{total_bullish_impact:.1f}%</span>", unsafe_allow_html=True)
             
-            for i, (value, label, emoji) in enumerate(stats):
-                with [col1, col2, col3, col4][i]:
-                    st.metric(label=f"{emoji} {label}", value=value)
+            with col2:
+                st.markdown("### 🔴 Total Bearish Impact")
+                st.markdown(f"## <span style='color: #ff0000; font-size: 36px; font-weight: bold;'>-{total_bearish_impact:.1f}%</span>", unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown("### 🟡 Avg Daily Impact")
+                if avg_daily_change > 0:
+                    st.markdown(f"## <span style='color: #00ff00; font-size: 36px; font-weight: bold;'>+{avg_daily_change:.1f}%</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"## <span style='color: #ff0000; font-size: 36px; font-weight: bold;'>{avg_daily_change:.1f}%</span>", unsafe_allow_html=True)
+            
+            with col4:
+                st.markdown("### ⭐ High Accuracy Transits")
+                st.markdown(f"## <span style='color: #ffd700; font-size: 36px; font-weight: bold;'>{high_accuracy_transits}</span>", unsafe_allow_html=True)
+            
+            # Overall Market Sentiment with large display
+            bullish_days = len([f for f in forecasts if f.sentiment == Sentiment.BULLISH])
+            bearish_days = len([f for f in forecasts if f.sentiment == Sentiment.BEARISH])
+            
+            st.markdown("---")
+            if bullish_days > bearish_days:
+                st.markdown("# <span style='color: #00ff00; font-size: 48px; font-weight: bold;'>📈 OVERALL BULLISH MONTH</span>", unsafe_allow_html=True)
+                st.markdown(f"## <span style='color: #00ff00; font-size: 24px;'>Bullish Days: {bullish_days} | Bearish Days: {bearish_days}</span>", unsafe_allow_html=True)
+            elif bearish_days > bullish_days:
+                st.markdown("# <span style='color: #ff0000; font-size: 48px; font-weight: bold;'>📉 OVERALL BEARISH MONTH</span>", unsafe_allow_html=True)
+                st.markdown(f"## <span style='color: #ff0000; font-size: 24px;'>Bearish Days: {bearish_days} | Bullish Days: {bullish_days}</span>", unsafe_allow_html=True)
+            else:
+                st.markdown("# <span style='color: #ffa500; font-size: 48px; font-weight: bold;'>➡️ NEUTRAL MONTH</span>", unsafe_allow_html=True)
+                st.markdown(f"## <span style='color: #ffa500; font-size: 24px;'>Balanced: {bullish_days} Bullish | {bearish_days} Bearish</span>", unsafe_allow_html=True)
             
             # Symbol-specific ruling planets info
             ruling_planets = platform.symbol_planetary_rulers.get(st.session_state.symbol, ['jupiter', 'saturn'])
             
             # Use native Streamlit components instead of HTML
             st.info(f"🪐 **Ruling Planetary Influences for {st.session_state.symbol}**")
-            st.markdown(f"**Primary Ruling Planets:** {', '.join([p.title() for p in ruling_planets])}")
+            st.markdown(f"### **Primary Ruling Planets:** {', '.join([p.title() for p in ruling_planets])}")
             st.markdown(f"_These planets have the strongest influence on {st.session_state.symbol}'s price movements according to astrological analysis._")
             
-            # Monthly forecast breakdown
+            # Monthly forecast breakdown - Dynamic Row Format
             st.markdown("### 📈 Symbol-Specific Monthly Forecast")
             
-            # Create weekly breakdown
-            weeks = [forecasts[i:i+7] for i in range(0, len(forecasts), 7)]
-            
-            for week_num, week_forecasts in enumerate(weeks, 1):
-                if not week_forecasts:
-                    continue
+            # Create dynamic daily rows instead of weekly columns
+            for i, forecast in enumerate(forecasts):
+                if i >= 21:  # Show first 21 days for better performance
+                    break
                     
-                st.markdown(f"#### Week {week_num}")
-                
-                weekly_cols = st.columns(min(7, len(week_forecasts)))
-                for i, forecast in enumerate(week_forecasts):
-                    if i < len(weekly_cols):
-                        with weekly_cols[i]:
-                            # Use native Streamlit components
-                            st.markdown(f"**{forecast.date.split('-')[2]}/{forecast.date.split('-')[1]}**")
-                            
-                            # Display change with appropriate color
-                            if forecast.sentiment == Sentiment.BULLISH:
-                                st.success(f"{forecast.change}%")
-                            elif forecast.sentiment == Sentiment.BEARISH:
-                                st.error(f"{forecast.change}%")
-                            else:
-                                st.info(f"{forecast.change}%")
-                            
-                            # Signal
-                            signal_text = {
-                                SignalType.LONG: "🟢 BUY",
-                                SignalType.SHORT: "🔴 SELL", 
-                                SignalType.HOLD: "🟡 HOLD"
-                            }.get(forecast.signal, "🟡 HOLD")
-                            
-                            st.markdown(f"**{signal_text}**")
-                            st.markdown(f"_{forecast.detailed_transit.planet} Transit_")
-                            st.markdown("---")
+                # Create expandable row for each day
+                with st.expander(f"📅 {forecast.date} (Day {forecast.day}) - {forecast.detailed_transit.planet} Transit", expanded=False):
+                    # Create 4 columns for better layout
+                    col1, col2, col3, col4 = st.columns([2, 2, 2, 2])
+                    
+                    with col1:
+                        # Large date display
+                        st.markdown(f"## {forecast.date.split('-')[2]}")
+                        st.markdown(f"**{forecast.date.split('-')[1]}/{forecast.date.split('-')[0]}**")
+                    
+                    with col2:
+                        # Dynamic change display with larger font
+                        change_val = float(forecast.change.replace('+', '').replace('-', ''))
+                        if forecast.sentiment == Sentiment.BULLISH:
+                            st.markdown(f"## <span style='color: #00ff00; font-size: 28px; font-weight: bold;'>{forecast.change}%</span>", unsafe_allow_html=True)
+                            st.success("📈 BULLISH TREND")
+                        elif forecast.sentiment == Sentiment.BEARISH:
+                            st.markdown(f"## <span style='color: #ff0000; font-size: 28px; font-weight: bold;'>{forecast.change}%</span>", unsafe_allow_html=True)
+                            st.error("📉 BEARISH TREND")
+                        else:
+                            st.markdown(f"## <span style='color: #ffa500; font-size: 28px; font-weight: bold;'>{forecast.change}%</span>", unsafe_allow_html=True)
+                            st.warning("➡️ NEUTRAL TREND")
+                    
+                    with col3:
+                        # Enhanced signal display
+                        if forecast.signal == SignalType.LONG:
+                            st.markdown("## 🚀")
+                            st.markdown("### <span style='color: #00ff00; font-size: 24px; font-weight: bold;'>STRONG BUY</span>", unsafe_allow_html=True)
+                        elif forecast.signal == SignalType.SHORT:
+                            st.markdown("## 📉")
+                            st.markdown("### <span style='color: #ff0000; font-size: 24px; font-weight: bold;'>STRONG SELL</span>", unsafe_allow_html=True)
+                        else:
+                            st.markdown("## ⏸️")
+                            st.markdown("### <span style='color: #ffa500; font-size: 24px; font-weight: bold;'>HOLD</span>", unsafe_allow_html=True)
+                    
+                    with col4:
+                        # Planet and accuracy info
+                        st.markdown(f"### {forecast.detailed_transit.planet}")
+                        st.markdown(f"**Accuracy: {forecast.detailed_transit.historical_accuracy:.1f}%**")
+                        st.markdown(f"*{forecast.detailed_transit.impact_strength} Impact*")
+                    
+                    # Additional details in full width
+                    st.markdown("---")
+                    st.markdown(f"**Event:** {forecast.event}")
+                    
+                    # Show sector impacts if available
+                    if forecast.sector_impact:
+                        st.markdown("**Sector Impacts:**")
+                        sector_cols = st.columns(len(forecast.sector_impact))
+                        for idx, (sector, impact) in enumerate(forecast.sector_impact.items()):
+                            with sector_cols[idx]:
+                                if impact > 0:
+                                    st.markdown(f"**{sector.upper()}**")
+                                    st.success(f"+{impact:.1f}%")
+                                else:
+                                    st.markdown(f"**{sector.upper()}**")
+                                    st.error(f"{impact:.1f}%")
         
         with tab3:
             st.markdown(f"## 📈 {st.session_state.symbol} Astrological Movement Graph")
@@ -1166,6 +1254,9 @@ def main():
         with tab4:
             st.markdown(f"## 🌙 Advanced Planetary Transit Analysis")
             st.markdown(f"### {st.session_state.symbol} - {platform.month_names[st.session_state.month]} {st.session_state.year}")
+            
+            # Get month name for display
+            month_name = platform.month_names[st.session_state.month]
             
             # Symbol-specific ruling planet analysis
             ruling_planets = platform.symbol_planetary_rulers.get(st.session_state.symbol, ['jupiter', 'saturn'])

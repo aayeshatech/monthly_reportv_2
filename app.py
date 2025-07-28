@@ -243,6 +243,23 @@ class EnhancedAstrologicalTradingPlatform:
             'MARUTI': ['mars', 'mercury'],
             'TATAMOTORS': ['mars', 'saturn'],
             'SUNPHARMA': ['sun', 'jupiter'],
+            'DRREDDY': ['mars', 'jupiter'],
+            'CIPLA': ['mercury', 'venus'],
+            'LUPIN': ['moon', 'neptune'],
+            'BIOCON': ['pluto', 'mars'],
+            'HINDUNILVR': ['venus', 'moon'],
+            'ITC': ['saturn', 'venus'],
+            'NESTLE': ['venus', 'jupiter'],
+            'BRITANNIA': ['moon', 'venus'],
+            'DABUR': ['venus', 'mercury'],
+            'BHARTI': ['mercury', 'uranus'],
+            'AIRTEL': ['mercury', 'uranus'],
+            'JIO': ['uranus', 'mercury'],
+            'IDEA': ['neptune', 'mercury'],
+            'AXIS': ['mars', 'venus'],
+            'KOTAK': ['mercury', 'venus'],
+            'HCLTECH': ['mercury', 'saturn'],
+            'TECHM': ['mercury', 'mars'],
             'GOLD': ['sun', 'venus'],
             'SILVER': ['moon', 'venus'],
             'CRUDE OIL': ['mars', 'pluto'],
@@ -596,11 +613,11 @@ def render_astro_calendar_grid(forecasts: List[Forecast], month_name: str, year:
                         </div>
                         
                         <h4 style="color: white; margin: 0 0 0.5rem 0; font-size: 1rem; line-height: 1.3;">
-                            {forecast.event}
+                            {transit.planet} {transit.aspect_type} {transit.aspect_planet if transit.aspect_planet else ''}
                         </h4>
                         
                         <p style="color: #b8b8b8; margin: 0 0 1rem 0; font-size: 0.85rem;">
-                            {transit.planet} in {transit.zodiac_sign.title()} • {transit.aspect_type.title()}
+                            {transit.planet} in {platform.zodiac_signs[transit.zodiac_sign].name} • {transit.aspect_type.title()}
                         </p>
                         
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -628,8 +645,14 @@ def main():
     )
     
     if market_category == "Stock Symbol":
-        popular_stocks = ["NIFTY", "RELIANCE", "TCS", "HDFC", "INFY", "ICICI", "SBI", "WIPRO", "MARUTI", "SUNPHARMA"]
-        symbol = st.sidebar.selectbox("📈 Stock Symbol", popular_stocks, help="Select stock symbol")
+        symbol = st.sidebar.text_input("📈 Stock Symbol", value="NIFTY", help="Enter stock symbol (e.g., NIFTY, RELIANCE, TCS)")
+        if symbol:
+            symbol = symbol.upper().strip()  # Normalize input
+            # Show if symbol is recognized
+            if symbol in platform.symbol_planetary_rulers:
+                st.sidebar.success(f"✅ {symbol} - Recognized symbol with specific planetary analysis")
+            else:
+                st.sidebar.info(f"ℹ️ {symbol} - Custom symbol with general planetary analysis")
         analysis_type = "stock"
     else:
         global_symbols = ["DOW JONES", "NASDAQ", "S&P 500", "GOLD", "SILVER", "CRUDE OIL", "BITCOIN", "EURUSD", "GBPUSD"]
